@@ -1,4 +1,4 @@
-package server
+package rules
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}

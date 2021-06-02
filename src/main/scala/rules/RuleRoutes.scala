@@ -1,4 +1,4 @@
-package server
+package rules
 
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -22,31 +22,29 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
   implicit val timeout: Timeout = 3.seconds
 
   lazy val ruleRoutes: Route =
-    pathPrefix("rules") {
-      concat(
-        post {
-          // TODO: need to unmarshall the rule object
-          entity(as[RuleRepository.Rule]) { rule =>
-            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
-            onSuccess(updatedRule) {
-              case RuleRepository.ActionSucceeded => complete("Rule updated")
-              case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
-            }
-          }
-        },
-        delete {
-          val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
-          onSuccess(clearRules) {
-            case RuleRepository.ActionSucceeded => complete("Rule cleared")
+    concat(
+      post {
+        // TODO: need to unmarshall the rule object
+        entity(as[RuleRepository.Rule]) { rule =>
+          val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
+          onSuccess(updatedRule) {
+            case RuleRepository.ActionSucceeded => complete("Rule updated")
             case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
           }
-        },
-        (get & path(LongNumber)) { id =>
-           val retrieveRules: Future[Option[RuleRepository.Rule]] = buildRuleRepository.ask(RuleRepository.GetRuleById(id, _))
-            rejectEmptyResponse {
-              complete(retrieveRules)
-            }
         }
-      )
-    }
+      },
+      delete {
+        val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
+        onSuccess(clearRules) {
+          case RuleRepository.ActionSucceeded => complete("Rule cleared")
+          case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+        }
+      },
+      (get & path(LongNumber)) { id =>
+        val retrieveRules: Future[Option[RuleRepository.Rule]] = buildRuleRepository.ask(RuleRepository.GetRuleById(id, _))
+        rejectEmptyResponse {
+          complete(retrieveRules)
+        }
+      }
+    )
 }
