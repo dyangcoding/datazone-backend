@@ -7,7 +7,7 @@ import org.apache.spark.sql.sources.v2.DataSourceOptions
 import org.apache.spark.sql.sources.v2.reader.InputPartition
 import org.apache.spark.sql.sources.v2.reader.streaming.{MicroBatchReader, Offset}
 import org.apache.spark.sql.types.StructType
-import tweets.{Tweet, TweetListener, TwitterConnection}
+import tweets.{Tweet, TweetListener, TwitterConnection, TwitterConnectionMock}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -69,7 +69,7 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
   private val queueSize = options.get(TwitterStreamingSource.QUEUE_SIZE).orElse("512").toInt
   private val debugLevel = options.get(TwitterStreamingSource.DEBUG_LEVEL).orElse("debug").toLowerCase
 
-  // Initilize offsets and parameter for creating MicroBatches
+  // Initialize offsets and parameter for creating MicroBatches
   private val NO_DATA_OFFSET = TwitterOffset(-1)
   private var startOffset: TwitterOffset = new TwitterOffset(-1)
   private var endOffset: TwitterOffset = new TwitterOffset(-1)
@@ -95,15 +95,12 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
     worker = new workerThread(tweetQueue, data)
     worker.start()
 
-    twitterCon= TwitterConnectionMock.createTwitterConnection
-    tl= new TweetListener {
-      override def onTweet(tweet: String): Unit = tweetQueue.add(tweet)
-    }
+    twitterCon = TwitterConnectionMock.createTwitterConnection
+    tl = (tweet: String) => tweetQueue.add(tweet)
     twitterCon.registerEventListener(tl)
   }
 
   override def planInputPartitions(): java.util.List[InputPartition[InternalRow]] = {
-    //println("Plan Input Partitions" + s"(" + startOffset + ")e(" + endOffset + ")")
     synchronized {
       val startOrdinal = startOffset.offset.toInt + 1
       val endOrdinal = endOffset.offset.toInt + 1
@@ -118,12 +115,11 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
         data.tweetList.slice(sliceStart, sliceEnd)
       }
 
-      val b = newBlocks.grouped(numPartitions).map { block =>
+      val result = newBlocks.grouped(numPartitions).map { block =>
         new TweetStreamBatchTask(block).asInstanceOf[InputPartition[InternalRow]]
       }.toList.asJava
 
-    //println("finished Input partitions")
-    b
+    result
   }
   }
 
