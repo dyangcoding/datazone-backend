@@ -11,7 +11,6 @@ import tweets.{Tweet, TweetListener, TwitterConnection, TwitterConnectionMock}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import java.io.IOException
 import java.util.Optional
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, TimeUnit}
 
@@ -40,7 +39,7 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
       println("Worker Run Method called")
       println("********************************************************")
 
-      while (true && !stopped) {
+      while (!stopped) {
         try {
           val tweet:String = queue.poll(100, TimeUnit.MILLISECONDS)
           if (tweet != null) {
@@ -104,32 +103,25 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
     synchronized {
       val startOrdinal = startOffset.offset.toInt + 1
       val endOrdinal = endOffset.offset.toInt + 1
-
       internalLog(s"createDataReaderFactories: sOrd: $startOrdinal, eOrd: $endOrdinal, " +
         s"lastOffsetCommitted: $lastOffsetCommitted")
-
       val newBlocks = synchronized {
         val sliceStart = startOrdinal - lastOffsetCommitted.offset.toInt - 1
         val sliceEnd = endOrdinal - lastOffsetCommitted.offset.toInt - 1
         assert(sliceStart <= sliceEnd, s"sliceStart: $sliceStart sliceEnd: $sliceEnd")
         data.tweetList.slice(sliceStart, sliceEnd)
       }
-
       val result = newBlocks.grouped(numPartitions).map { block =>
         new TweetStreamBatchTask(block).asInstanceOf[InputPartition[InternalRow]]
       }.toList.asJava
-
-    result
+      result
+    }
   }
-  }
 
-  override def setOffsetRange(start: Optional[Offset],
-                              end: Optional[Offset]): Unit = {
-
+  override def setOffsetRange(start: Optional[Offset], end: Optional[Offset]): Unit = {
     if (start.isPresent && start.get().asInstanceOf[TwitterOffset].offset != data.currentOffset.offset) {
       internalLog(s"setOffsetRange: start: $start, end: $end currentOffset: ${data.currentOffset}")
     }
-
     this.startOffset = start.orElse(NO_DATA_OFFSET).asInstanceOf[TwitterOffset]
     this.endOffset = end.orElse(data.currentOffset).asInstanceOf[TwitterOffset]
   }
@@ -146,36 +138,29 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
     if (endOffset.offset == -1) {
       data.currentOffset
     } else {
-
       if (lastReturnedOffset.offset < endOffset.offset) {
         internalLog(s"** getEndOffset => $endOffset)")
         lastReturnedOffset = endOffset
       }
       endOffset
     }
-
   }
 
   override def commit(end: Offset): Unit = {
-
     internalLog(s"** commit($end) lastOffsetCommitted: $lastOffsetCommitted")
     val newOffset = TwitterOffset.convert(end).getOrElse(
       sys.error(s"TwitterStreamMicroBatchReader.commit() received an offset ($end) that did not " +
         s"originate with an instance of this class")
     )
-
     val offsetDiff = (newOffset.offset - lastOffsetCommitted.offset).toInt
-
     if (offsetDiff < 0) {
       sys.error(s"Offsets committed out of order: $lastOffsetCommitted followed by $end")
     }
-
     data.tweetList.trimStart(offsetDiff)
     lastOffsetCommitted = newOffset
   }
 
   override def stop(): Unit = {
-
     log.warn(s"There is a total of ${data.incomingEventCounter} events that came in")
     twitterCon.removeEventListener(tl)
     stopped = true

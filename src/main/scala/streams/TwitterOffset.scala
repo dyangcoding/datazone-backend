@@ -7,7 +7,7 @@ import org.json4s.DefaultFormats
 
 case class TwitterOffset (offset:Long) extends v2.reader.streaming.Offset  {
     implicit val defaultFormats: DefaultFormats = DefaultFormats
-    override val json = offset.toString
+    override val json: String = offset.toString
 
     def +(increment: Long): TwitterOffset = new TwitterOffset(offset + increment)
     def -(decrement: Long): TwitterOffset = new TwitterOffset(offset - decrement)
