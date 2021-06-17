@@ -19,6 +19,9 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % SparkVersion,
   "org.apache.spark" %% "spark-catalyst" % SparkVersion,
 
+  // mongo drive
+  "org.mongodb.scala" %% "mongo-scala-driver" % "2.9.0",
+
   // Http Library
   "org.scalaj" %% "scalaj-http" % "2.4.2",
 
