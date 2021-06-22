@@ -13,11 +13,6 @@ import akka.actor.typed.{ActorRef, Behavior}
     3
  */
 object RuleRepository {
-
-  final case class Rule(id: Long, keyword: String, userID: Long, emoji: String, phrase: String, hashtags: String,
-                        from: String, to: String, url: String, retweetsOf: String, context: String, entity: String,
-                        conversationId: Long)
-
   // Trait defining successful and failure responses
   sealed trait Response
 
@@ -28,22 +23,22 @@ object RuleRepository {
   // Trait and its implementations representing all possible messages that can be sent to this Behavior
   sealed trait Command
 
-  final case class AddRule(job: Rule, replyTo: ActorRef[Response]) extends Command
+  final case class AddRule(rule: Rule, replyTo: ActorRef[Response]) extends Command
 
-  final case class GetRuleById(id: Long, replyTo: ActorRef[Option[Rule]]) extends Command
+  final case class GetRuleById(keyword: String, replyTo: ActorRef[Option[Rule]]) extends Command
 
   final case class ClearRules(replyTo: ActorRef[Response]) extends Command
 
   // This behavior handles all possible incoming messages and keeps the state in the function parameter
-  def apply(rules: Map[Long, Rule] = Map.empty): Behavior[Command] = Behaviors.receiveMessage {
-    case AddRule(rule, replyTo) if rules.contains(rule.id) =>
+  def apply(rules: Map[String, Rule] = Map.empty): Behavior[Command] = Behaviors.receiveMessage {
+    case AddRule(rule, replyTo) if rules.contains(rule.keyword) =>
       replyTo ! ActionFailed("Rule already exists")
       Behaviors.same
-    case AddRule(job, replyTo) =>
+    case AddRule(rule, replyTo) =>
       replyTo ! ActionSucceeded
-      RuleRepository(rules.+(job.id -> job))
-    case GetRuleById(id, replyTo) =>
-      replyTo ! rules.get(id)
+      RuleRepository(rules.+(rule.keyword -> rule))
+    case GetRuleById(keyword, replyTo) =>
+      replyTo ! rules.get(keyword)
       Behaviors.same
     case ClearRules(replyTo) =>
       replyTo ! ActionSucceeded
