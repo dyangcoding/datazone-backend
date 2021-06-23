@@ -27,4 +27,7 @@ libraryDependencies ++= Seq(
 
   // Reactive Mongo
   "org.reactivemongo" %% "reactivemongo" % MongoReactive,
+
+  // logger
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
 )
