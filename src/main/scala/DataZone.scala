@@ -3,9 +3,9 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import rules.{RuleRepository, RuleRoutes}
-import scala.concurrent.Future
 
-import scala.util.{ Success, Failure }
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 
 object DataZone {
 
@@ -16,7 +16,8 @@ object DataZone {
 
   def apply(host: String, port: Int): Behavior[Message] =
       Behaviors.setup ( context => {
-        implicit val system = context.system
+        implicit val system: ActorSystem[Nothing] = context.system
+        implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
         val buildRuleRepository = context.spawn(RuleRepository(), "RuleRepository")
         val routes = new RuleRoutes(buildRuleRepository)
@@ -25,8 +26,14 @@ object DataZone {
           Http().newServerAt(host, port).bind(routes.ruleRoutes)
 
         context.pipeToSelf(serverBinding) {
-          case Success(binding) => Started(binding)
-          case Failure(ex)      => StartFailed(ex)
+          case Success(binding) =>
+            val address = binding.localAddress
+            system.log.info("Server online at http://{}:{}/", address.getHostString, address.getPort)
+            Started(binding)
+          case Failure(ex) =>
+            system.log.error("Failed to bind HTTP endpoint, terminating system", ex)
+            system.terminate()
+            StartFailed(ex)
         }
 
         def running(binding: ServerBinding): Behavior[Message] =
@@ -61,16 +68,6 @@ object DataZone {
           }
 
         starting(wasStopped = false)
-
-        // create all child actors here
-        // val ruleSupervisor = context.spawn(RuleSupervisor(), "ruleSupervisor")
-        // val tweetsSupervisor = context.spawn(TweetsSupervisor, "TweetsSupervisor")
-
-        // watch tweets supervisor if any errors happen
-        // context.watch(tweetsSupervisor)
-
-        // do some initial setups for building rules
-        // tweetsSupervisor ! TweetsSupervisor.setUpInitialRules() ...
       }
     )
 

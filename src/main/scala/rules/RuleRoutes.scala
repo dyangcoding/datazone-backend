@@ -17,22 +17,24 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
   implicit val timeout: Timeout = 3.seconds
 
   lazy val ruleRoutes: Route =
-    concat(
-      post {
-        entity(as[Rule]) { rule =>
-          val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
-          onSuccess(updatedRule) {
-            case RuleRepository.ActionSucceeded => complete("Rule updated")
+    pathPrefix("rules") {
+      concat(
+        post {
+          entity(as[Rule]) { rule =>
+            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
+            onSuccess(updatedRule) {
+              case RuleRepository.ActionSucceeded => complete("Rule updated")
+              case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+            }
+          }
+        },
+        delete {
+          val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
+          onSuccess(clearRules) {
+            case RuleRepository.ActionSucceeded => complete("Rule cleared")
             case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
           }
-        }
-      },
-      delete {
-        val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
-        onSuccess(clearRules) {
-          case RuleRepository.ActionSucceeded => complete("Rule cleared")
-          case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
-        }
-      },
-    )
+        },
+      )
+    }
 }
