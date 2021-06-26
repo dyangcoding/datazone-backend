@@ -30,4 +30,8 @@ libraryDependencies ++= Seq(
 
   // logger
   "ch.qos.logback" % "logback-classic" % "1.2.3",
+
+  // tests
+  "org.scalactic" %% "scalactic" % "3.2.5",
+  "org.scalatest" %% "scalatest" % "3.2.5" % "test",
 )
