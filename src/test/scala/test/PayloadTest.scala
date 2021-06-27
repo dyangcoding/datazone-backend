@@ -8,6 +8,6 @@ class RuleTest extends AnyFunSuite {
 
   test("Rule to basic payload") {
     val rule = Rule(keyword = "life happiness")
-    println(JSONParser.toJson(rule.toBasicPayload))
+    println(rule.toBasicPayload.toString)
   }
 }

@@ -22,7 +22,7 @@ object StringUtils {
   }
 
   def Or(left: String, right: String): String = {
-    "(".concat(left).concat(" OR ").concat(right).concat(")")
+    left.concat(" OR ").concat(right)
   }
 
   def Not(value: String): String = {
