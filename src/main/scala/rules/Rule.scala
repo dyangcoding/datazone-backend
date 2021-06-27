@@ -3,11 +3,30 @@ package rules
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-final case class Rule(
-     keyword: String, userId: Long, emoji: String,
-     phrase: String, hashtags: String, fromUser: String, toUser: String,
-     url: String, retweetsOfUser: String, context: String, entity: String,
-     conversationId: Long) {
+/*
+ Represents data required for filtered Stream Endpoint, only keyword is required, others are optional
+ */
+final case class Rule (
+     keyword:         String,
+     userId:          Option[Long] = None,
+     emoji:           Option[String] = None,
+     phrase:          Option[String] = None,
+     hashtags:        Option[String] = None,
+     fromUser:        Option[String] = None,
+     toUser:          Option[String] = None,
+     url:             Option[String] = None,
+     retweetsOfUser:  Option[String] = None,
+     context:         Option[String] = None,
+     entity:          Option[String] = None,
+     conversationId:  Option[Long] = None) {
+
+  def toBasicPayload: RulePayload = {
+    RulePayload(keyword)
+  }
+
+  def toPayload: RulePayload = {
+    ???
+  }
 }
 
 // provides Json Unmarshalling utility
