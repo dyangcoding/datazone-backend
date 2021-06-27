@@ -31,6 +31,34 @@ case class RulePayload (value: String, tag: Option[String] = None) {
   def appendTag(tagValue: String): RulePayload = {
     this.flatMap(payload => RulePayload(payload.value, tag=Option(tagValue)))
   }
+
+  def appendEmoji(emoji: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(emoji, payload.value)))
+  }
+
+  def appendUrl(url: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(url, payload.value)))
+  }
+
+  def appendPhrase(phrase: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(phrase, payload.value)))
+  }
+
+  def appendContext(context: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(Append("context:", context), payload.value)))
+  }
+
+  def appendEntity(entity: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(Append("entity:", entity), payload.value)))
+  }
+
+  def appendConversationId(conversationId: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(Append("conversationId:", conversationId), payload.value)))
+  }
+
+  def group(): RulePayload = {
+    this.flatMap(payload => RulePayload(Group(payload.value)))
+  }
 }
 
 /*
