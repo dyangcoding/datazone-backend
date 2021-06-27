@@ -3,6 +3,36 @@ package rules
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
+import utils.StringUtils._
+
+case class Payload(operation: String, entries: Seq[RulePayload])
+
+case class RulePayload (value: String, tag: Option[String] = None) {
+  def flatMap(transformer: rules.RulePayload => rules.RulePayload): rules.RulePayload = {
+    transformer(this)
+  }
+
+  def appendHashtag(hashtag: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(hashtag, payload.value)))
+  }
+
+  def appendUserId(userId: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(AppendAt(userId), payload.value)))
+  }
+
+  def appendFromUser(fromUser: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(Append("from:", fromUser), payload.value)))
+  }
+
+  def appendToUser(toUser: String): RulePayload = {
+    this.flatMap(payload => RulePayload(And(Append("to:", toUser), payload.value)))
+  }
+
+  def appendTag(tagValue: String): RulePayload = {
+    this.flatMap(payload => RulePayload(payload.value, tag=Option(tagValue)))
+  }
+}
+
 /*
  Represents data required for filtered Stream Endpoint, only keyword is required, others are optional
  */
