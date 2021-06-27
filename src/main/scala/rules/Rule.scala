@@ -34,6 +34,19 @@ case class RulePayload (value: String, tag: Option[String] = None) {
 }
 
 /*
+ Represents optional options for building rules for filtered Stream Endpoint
+ */
+case class RuleOptions(
+     isRetweet:   Option[Boolean] = Option(false),
+     isReply:     Option[Boolean] = Option(false),
+     isVerified:  Option[Boolean] = Option(true),
+     hasHashTags: Option[Boolean] = Option(true),
+     hasLinks:    Option[Boolean] = Option(true),
+     hasMedia:    Option[Boolean] = Option(true),
+     hasImages:   Option[Boolean] = Option(true),
+     hasVideos:   Option[Boolean] = Option(false))
+
+/*
  Represents data required for filtered Stream Endpoint, only keyword is required, others are optional
  */
 final case class Rule (
@@ -48,7 +61,9 @@ final case class Rule (
      retweetsOfUser:  Option[String] = None,
      context:         Option[String] = None,
      entity:          Option[String] = None,
-     conversationId:  Option[Long] = None) {
+     conversationId:  Option[Long] = None,
+     lang:            Option[String] = Option("de"),
+     ruleOptions:     RuleOptions = RuleOptions()) {
 
   def toBasicPayload: RulePayload = {
     RulePayload(keyword)
@@ -61,5 +76,6 @@ final case class Rule (
 
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val ruleFormat: RootJsonFormat[Rule] = jsonFormat12(Rule)
+  implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat8(RuleOptions)
+  implicit val ruleFormat: RootJsonFormat[Rule] = jsonFormat14(Rule)
 }
