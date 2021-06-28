@@ -11,12 +11,14 @@ trait Rule {
   def toPayload: PayloadEntry
 }
 
-case class BasicRule(keyword: String, emoji: Option[String], containsUserId: Option[String]) extends Rule {
+abstract class BasicRule(val keyword:        String,
+                         val emoji:          Option[String]=None,
+                         val containsUserId: Option[String]=None) extends Rule {
   override def toPayload: PayloadEntry = (emoji, containsUserId) match {
-    case (Some(emoji: String), Option.empty) =>
+    case (Some(emoji: String), None) =>
       PayloadEntry(value = Group(keyword))
         .flatMap(payload => PayloadEntry(And(emoji, payload.value)))
-    case (Option.empty, Some(containsUserId: String)) =>
+    case (None, Some(containsUserId: String)) =>
       PayloadEntry(value = Group(keyword))
         .flatMap(payload => PayloadEntry(And(AppendAt(containsUserId), payload.value)))
     case (Some(emoji: String), Some(containsUserId: String)) =>
@@ -30,59 +32,59 @@ case class BasicRule(keyword: String, emoji: Option[String], containsUserId: Opt
   def toBasicRule: PayloadEntry = toPayload
 }
 
-case class StandardRule(override val keyword: String,
-                   override val emoji: Option[String],
-                   override val containsUserId: Option[String], // including the @ character
-                   phrase: Option[String],
-                   hashtags: Option[String],
-                   url: Option[String]) extends BasicRule(keyword, emoji, containsUserId) {
+abstract class StandardRule(override val keyword: String,
+                            override val emoji: Option[String]=None,
+                            override val containsUserId: Option[String]=None, // including the @ character
+                            val phrase: Option[String]=None,
+                            val hashtags: Option[String]=None,
+                            val url: Option[String]=None) extends BasicRule(keyword, emoji, containsUserId) {
 
   val isReply: Option[Boolean]=Option(false)
   val hasHashtags: Option[Boolean]=Option(true)
 
   override def toPayload: PayloadEntry = (phrase, hashtags, url) match {
-    case (Some(phrase: String), Option.empty, Option.empty) =>
-      toBasicRule
+    case (Some(phrase: String), None, None) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Group(phrase), payload.value)))
-    case (Option.empty, Some(hashtags: String), Option.empty) =>
-      toBasicRule
+    case (None, Some(hashtags: String), None) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(hashtags, payload.value)))
-    case (Option.empty, Option.empty, Some(url: String)) =>
-      toBasicRule
+    case (None, None, Some(url: String)) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(url, payload.value)))
-    case (Some(phrase: String), Some(hashtags: String), Option.empty) =>
-      toBasicRule
+    case (Some(phrase: String), Some(hashtags: String), None) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Group(phrase), payload.value)))
         .flatMap(payload => PayloadEntry(And(hashtags, payload.value)))
-    case (Some(phrase: String), Option.empty, Some(url: String)) =>
-      toBasicRule
+    case (Some(phrase: String), None, Some(url: String)) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Group(phrase), payload.value)))
         .flatMap(payload => PayloadEntry(And(url, payload.value)))
-    case (Option.empty, Some(hashtags: String), Some(url: String)) =>
-      toBasicRule
+    case (None, Some(hashtags: String), Some(url: String)) =>
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(hashtags, payload.value)))
         .flatMap(payload => PayloadEntry(And(url, payload.value)))
     case (Some(phrase: String), Some(hashtags: String), Some(url: String)) =>
-      toBasicRule
+      StandardRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Group(phrase), payload.value)))
         .flatMap(payload => PayloadEntry(And(hashtags, payload.value)))
         .flatMap(payload => PayloadEntry(And(url, payload.value)))
     case _ =>
-      toBasicRule
+      StandardRule.super.toPayload
   }
 
   def toStandardRule: PayloadEntry = toPayload
 }
 
-case class AdvancedRule(override val keyword: String,
-                   override val emoji: Option[String],
-                   override val containsUserId: Option[String],
-                   override val phrase: Option[String],
-                   override val hashtags: Option[String],
-                   override val url: Option[String],
-                   fromUser: Option[String], // excluding the @ character or the user's numeric user ID
-                   toUser: Option[String],  // excluding the @ character or the user's numeric user ID
-                   retweetsOfUser: Option[String] // excluding the @ character or the user's numeric user ID
+abstract class AdvancedRule(override val keyword:        String,
+                            override val emoji:          Option[String]=None,
+                            override val containsUserId: Option[String]=None,
+                            override val phrase:         Option[String]=None,
+                            override val hashtags:       Option[String]=None,
+                            override val url:            Option[String]=None,
+                            val fromUser:                Option[String]=None, // excluding the @ character or the user's numeric user ID
+                            val toUser:                  Option[String]=None, // excluding the @ character or the user's numeric user ID
+                            val retweetsOfUser:          Option[String]=None // excluding the @ character or the user's numeric user ID
               ) extends StandardRule(keyword, emoji, containsUserId, phrase, hashtags, url) {
 
   val hasLinks: Option[Boolean]=Option(true)
@@ -90,90 +92,87 @@ case class AdvancedRule(override val keyword: String,
   val hasImages: Option[Boolean]=Option(true)
 
   override def toPayload: PayloadEntry = (fromUser, toUser, retweetsOfUser) match {
-    case (Some(fromUser: String), Option.empty, Option.empty) =>
-      toStandardRule
+    case (Some(fromUser: String), None, None) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("from:", fromUser), payload.value)))
-    case (Option.empty, Some(toUser: String), Option.empty) =>
-      toStandardRule
+    case (None, Some(toUser: String), None) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("to:", toUser), payload.value)))
-    case (Option.empty, Option.empty, Some(retweetsOfUser: String)) =>
-      toStandardRule
+    case (None, None, Some(retweetsOfUser: String)) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("retweetOf:", retweetsOfUser), payload.value)))
-    case (Some(fromUser: String), Some(toUser: String), Option.empty) =>
-      toStandardRule
+    case (Some(fromUser: String), Some(toUser: String), None) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("from:", fromUser), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("to:", toUser), payload.value)))
-    case (Some(fromUser: String), Option.empty, Some(retweetsOfUser: String)) =>
-      toStandardRule
+    case (Some(fromUser: String), None, Some(retweetsOfUser: String)) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("from:", fromUser), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("retweetOf:", retweetsOfUser), payload.value)))
-    case (Option.empty, Some(toUser: String), Some(retweetsOfUser: String)) =>
-      toStandardRule
+    case (None, Some(toUser: String), Some(retweetsOfUser: String)) =>
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("to:", toUser), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("retweetOf:", retweetsOfUser), payload.value)))
     case (Some(fromUser: String), Some(toUser: String), Some(retweetsOfUser: String)) =>
-      toStandardRule
+      AdvancedRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("from:", fromUser), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("to:", toUser), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("retweetOf:", retweetsOfUser), payload.value)))
     case _ =>
-      toStandardRule
+      AdvancedRule.super.toPayload
   }
 
   def toAdvancedRule: PayloadEntry = toPayload
 }
 
-case class FullRule(override val keyword: String,
-               override val emoji: Option[String],
-               override val containsUserId: Option[String],
-               override val phrase: Option[String],
-               override val hashtags: Option[String],
-               override val url: Option[String],
-               override val fromUser: Option[String],
-               override val toUser: Option[String],
-               override val retweetsOfUser: Option[String],
-               context: Option[String],
-               entity: Option[String],
-               conversationId: Option[String] // matches Tweets that share a common conversation ID
-            ) extends AdvancedRule(keyword, emoji, containsUserId, phrase, hashtags, url, fromUser, toUser, retweetsOfUser) {
+case class FullRule(override val keyword:        String,
+                    override val emoji:          Option[String]=None,
+                    override val containsUserId: Option[String]=None,
+                    override val phrase:         Option[String]=None,
+                    override val hashtags:       Option[String]=None,
+                    override val url:            Option[String]=None,
+                    override val fromUser:       Option[String]=None,
+                    override val toUser:         Option[String]=None,
+                    override val retweetsOfUser: Option[String]=None,
+                    context:                     Option[String]=None,
+                    entity:                      Option[String]=None,
+                    conversationId:              Option[String]=None // matches Tweets that share a common conversation ID
+                  ) extends AdvancedRule(keyword, emoji, containsUserId, phrase, hashtags, url, fromUser, toUser, retweetsOfUser) {
   val hasVideos: Option[Boolean]=Option(false)
 
   override def toPayload: PayloadEntry = (context, entity, conversationId) match {
-    case (Some(context: String), Option.empty, Option.empty) =>
-      toAdvancedRule
+    case (Some(context: String), None, None) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("context:", context), payload.value)))
-    case (Option.empty, Some(entity: String), Option.empty) =>
-      toAdvancedRule
+    case (None, Some(entity: String), None) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("entity:", entity), payload.value)))
-    case (Option.empty, Option.empty, Some(conversationId: String)) =>
-      toAdvancedRule
+    case (None, None, Some(conversationId: String)) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("conversationId:", conversationId), payload.value)))
-    case (Some(context: String), Some(entity: String), Option.empty) =>
-      toAdvancedRule
+    case (Some(context: String), Some(entity: String), None) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("context:", context), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("entity:", entity), payload.value)))
-    case (Some(context: String), Option.empty, Some(conversationId: String)) =>
-      toAdvancedRule
+    case (Some(context: String), None, Some(conversationId: String)) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("context:", context), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("conversationId:", conversationId), payload.value)))
-    case (Option.empty, Some(entity: String), Some(conversationId: String)) =>
-      toAdvancedRule
+    case (None, Some(entity: String), Some(conversationId: String)) =>
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("entity:", entity), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("conversationId:", conversationId), payload.value)))
     case (Some(context: String), Some(entity: String), Some(conversationId: String)) =>
-      toAdvancedRule
+      FullRule.super.toPayload
         .flatMap(payload => PayloadEntry(And(Append("context:", context), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("entity:", entity), payload.value)))
         .flatMap(payload => PayloadEntry(And(Append("conversationId:", conversationId), payload.value)))
     case _ =>
-      toAdvancedRule
+      FullRule.super.toPayload
   }
 }
 
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val basicRuleFormat: RootJsonFormat[BasicRule] = jsonFormat3(BasicRule)
-  implicit val standardRuleFormat: RootJsonFormat[StandardRule] = jsonFormat6(StandardRule)
-  implicit val advancedRuleFormat: RootJsonFormat[AdvancedRule] = jsonFormat9(AdvancedRule)
   implicit val fullRuleFormat: RootJsonFormat[FullRule] = jsonFormat12(FullRule)
 }

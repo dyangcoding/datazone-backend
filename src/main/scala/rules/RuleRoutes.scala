@@ -20,7 +20,7 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
     pathPrefix("rules") {
       concat(
         post {
-          entity(as[Rule]) { rule =>
+          entity(as[FullRule]) { rule =>
             val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
             onSuccess(updatedRule) {
               case RuleRepository.ActionSucceeded => complete("Rule updated")
