@@ -5,6 +5,25 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import utils.StringUtils._
 
 trait Rule {
+  // match Tweets that are truly retweets
+  val isRetweet:    Option[Boolean]=Option(false)
+  // deliver only Tweets whose authors are verified by Twitter
+  val isVerified:   Option[Boolean]=Option(true)
+  // deliver only explicit replies that match a rule
+  val isReply:      Option[Boolean]=Option(false)
+  // match Tweets that contain at least one hashtag
+  val hasHashtags:  Option[Boolean]=Option(true)
+  // match Tweets which contain links and media in the Tweet body
+  val hasLinks:     Option[Boolean]=Option(true)
+  // match Tweets that contain a media object, such as a photo, GIF, or video, as determined by Twitter
+  val hasMedia:     Option[Boolean]=Option(true)
+  // match Tweets that contain a recognized URL to an image.
+  val hasImages:    Option[Boolean]=Option(true)
+  // match Tweets that contain native Twitter videos, uploaded directly to Twitter
+  val hasVideos:    Option[Boolean]=Option(false)
+  // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
+  val simple: Int = 30
+  // convert Rule Model to PayloadEntry for filtered Stream API
   def toPayload: PayloadEntry
 }
 
