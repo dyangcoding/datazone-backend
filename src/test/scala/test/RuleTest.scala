@@ -1,45 +1,95 @@
 package test
 
 import org.scalatest.funsuite.AnyFunSuite
-import rules.Rule
+import rules.{BasicRule, FullRule, Rule}
 import utils.JSONParser
 
 class RuleTest extends AnyFunSuite{
-  val rule: Rule = Rule(keyword = "basic keyword searching")
-
-  test("basic rule payload") {
-    print(JSONParser.toJson(rule.toBasicPayload))
+  test("keyword rule") {
+    val rule = FullRule(keyword = "basic keyword searching")
+    print(JSONParser.toJson(rule.toPayload))
   }
 
-  test("append hashtag") {
-    val ruleWithHashtag = rule.toBasicPayload.appendHashtag("#tweetfilterStream")
-    println(JSONParser.toJson(ruleWithHashtag))
+  test("keyword with phrase") {
+    val rule = FullRule(keyword = "keyword", phrase = Option("how to achieve a happy dev life"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 
-  test("append userId") {
-    val ruleWithUserId = rule.toBasicPayload.appendUserId("twitterapi")
-    println(JSONParser.toJson(ruleWithUserId))
+  test("keyword with hashtag") {
+    val rule = FullRule(keyword = "keyword", hashtags = Option("twitterdev"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 
-  test("append from userId") {
-    val ruleWithFromUserId = rule.toBasicPayload.appendFromUser("twitterdev")
-    println(JSONParser.toJson(ruleWithFromUserId))
+  test("keyword with userId") {
+    val rule = FullRule(keyword = "keyword", mentionedUserId = Option("dailyBerlin"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 
-  test("append to userId") {
-    val ruleWithToUserId = rule.toBasicPayload.appendToUser("dailyNews")
-    println(JSONParser.toJson(ruleWithToUserId))
+  test("keyword with fromUser") {
+    val rule = FullRule(keyword = "keyword", fromUser = Option("dailyBerlin"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 
-  test("append Tag") {
-    val ruleWithToTag = rule.toBasicPayload.appendTag("test filtered streaming rules")
-    println(JSONParser.toJson(ruleWithToTag))
+  test("keyword with toUser") {
+    val rule = FullRule(keyword = "keyword", toUser = Option("dailyBerlin"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 
-  test("combine hashtag and userId") {
-    val hashtagWithUserid = rule.toBasicPayload
-      .appendHashtag("#happiness")
-      .appendUserId("twitterDev")
-    println(JSONParser.toJson(hashtagWithUserid))
+  test("keyword, phrase, hashtags") {
+    val rule = FullRule(keyword = "keyword", phrase = Option("how to achieve a better dev life"), hashtags = Option("#happiness"))
+    println(JSONParser.toJson(rule.toPayload))
+  }
+
+  test("keyword, phrase, hashtags, mentionedUser, emoji") {
+    val rule = FullRule(
+      keyword = "keyword",
+      phrase = Option("how to achieve a better dev life"),
+      hashtags = Option("#happiness"),
+      emoji = Option("dummyEmoji"),
+      mentionedUserId = Option("dailyBerlin"))
+    println(JSONParser.toJson(rule.toPayload))
+  }
+
+  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser") {
+    val rule = FullRule(
+      keyword = "keyword",
+      phrase = Option("how to achieve a better dev life"),
+      hashtags = Option("#happiness"),
+      emoji = Option("dummyEmoji"),
+      mentionedUserId = Option("dailyBerlin"),
+      fromUser = Option("twitterAPI"),
+      toUser = Option("twitterDev"))
+    println(JSONParser.toJson(rule.toPayload))
+  }
+
+  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser") {
+    val rule = FullRule(
+      keyword = "keyword",
+      phrase = Option("how to achieve a better dev life"),
+      hashtags = Option("#happiness"),
+      emoji = Option("dummyEmoji"),
+      mentionedUserId = Option("dailyBerlin"),
+      fromUser = Option("twitterAPI"),
+      toUser = Option("twitterDev"),
+      url = Option("http:twitterFilteredStreamApi"),
+      retweetsOfUser = Option("IntellijLife"))
+    println(JSONParser.toJson(rule.toPayload))
+  }
+
+  test("All") {
+    val rule = FullRule(
+      keyword = "keyword",
+      phrase = Option("how to achieve a better dev life"),
+      hashtags = Option("#happiness"),
+      emoji = Option("dummyEmoji"),
+      mentionedUserId = Option("dailyBerlin"),
+      fromUser = Option("twitterAPI"),
+      toUser = Option("twitterDev"),
+      url = Option("http:twitterFilteredStreamApi"),
+      retweetsOfUser = Option("IntellijLife"),
+      context = Option("10.799022225751871488"),
+      entity = Option("Berlin HTW"),
+      conversationId = Option("1334987486343299072"))
+    println(JSONParser.toJson(rule.toPayload))
   }
 }
