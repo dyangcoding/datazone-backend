@@ -2,139 +2,115 @@ package rules
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
-import utils.StringUtils._
 
-trait Rule {
-  // match Tweets that are truly retweets
-  val isRetweet:    Option[Boolean]=Option(false)
-  // deliver only Tweets whose authors are verified by Twitter
-  val isVerified:   Option[Boolean]=Option(true)
-  // deliver only explicit replies that match a rule
-  val isReply:      Option[Boolean]=Option(false)
-  // match Tweets that contain at least one hashtag
-  val hasHashtags:  Option[Boolean]=Option(true)
-  // match Tweets which contain links and media in the Tweet body
-  val hasLinks:     Option[Boolean]=Option(true)
-  // match Tweets that contain a media object, such as a photo, GIF, or video, as determined by Twitter
-  val hasMedia:     Option[Boolean]=Option(true)
-  // match Tweets that contain a recognized URL to an image.
-  val hasImages:    Option[Boolean]=Option(true)
-  // match Tweets that contain native Twitter videos, uploaded directly to Twitter
-  val hasVideos:    Option[Boolean]=Option(false)
-  // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
-  val simple: Int = 30
-  // convert Rule Model to PayloadEntry for filtered Stream API
-  def toPayload: PayloadEntry
-}
+case class Rule(keyword:         String,
+                emoji:           Option[String]=None, // matches a keyword within the body of a Tweet
+                mentionedUserId: Option[String]=None, // including the @ character
+                phrase:          Option[String]=None, // matches the exact phrase within the body of a Tweet
+                hashtags:        Option[String]=None, // matches any Tweet containing a recognized hashtag
+                url:             Option[String]=None, // performs a tokenized match on any validly-formatted URL of a Tweet
+                fromUser:        Option[String]=None, // excluding the @ character or the user's numeric user ID
+                toUser:          Option[String]=None, // excluding the @ character or the user's numeric user ID
+                retweetsOfUser:  Option[String]=None, // excluding the @ character or the user's numeric user ID
+                context:         Option[String]=None, // matches Tweets with a specific domain id and/or domain id
+                entity:          Option[String]=None, // matches Tweets with a specific entity string value
+                conversationId:  Option[String]=None // matches Tweets that share a common conversation ID
+){
 
-abstract class BasicRule(val keyword:         String,
-                         val emoji:           Option[String]=None,
-                         val mentionedUserId: Option[String]=None) extends Rule {
+  // starting point to build a PayloadEntry
+  def toBasicPayload: PayloadEntry = PayloadEntry(value = keyword).group()
 
-  override def toPayload: PayloadEntry = {
-    val payload = PayloadEntry(value = keyword).group()
-    val emojiPayload = emoji match {
+  def applyEmoji(payload: PayloadEntry): PayloadEntry = {
+    emoji match {
       case Some(emoji: String) =>
         payload.applyEmoji(emoji)
       case _ => payload
     }
+  }
 
+  def applyMentionedUserId(payload: PayloadEntry): PayloadEntry = {
     mentionedUserId match {
-      case Some(mentionedUserId: String) => emojiPayload.applyUserId(mentionedUserId)
-      case _ => emojiPayload
+      case Some(mentionedUserId: String) => payload.applyUserId(mentionedUserId)
+      case _ => payload
     }
   }
 
-  def toBasicRule: PayloadEntry = toPayload
-}
-
-abstract class StandardRule(override val keyword:         String,
-                            override val emoji:           Option[String]=None,
-                            override val mentionedUserId: Option[String]=None, // including the @ character
-                            val phrase:                   Option[String]=None,
-                            val hashtags:                 Option[String]=None,
-                            val url:                      Option[String]=None) extends BasicRule(keyword, emoji, mentionedUserId) {
-
-  override def toPayload: PayloadEntry = {
-    val phrasePayload = phrase match {
-      case Some(phrase: String) => StandardRule.super.toPayload.applyPhrase(phrase)
-      case _ => StandardRule.super.toPayload
+  def applyPhrase(payload: PayloadEntry): PayloadEntry = {
+    phrase match {
+      case Some(phrase: String) => payload.applyPhrase(phrase)
+      case _ => payload
     }
+  }
 
-    val hashtagPayload = hashtags match {
-      case Some(hashtags: String) => phrasePayload.applyHashtag(hashtags)
-      case _ => phrasePayload
+  def applyHashTags(payload: PayloadEntry): PayloadEntry = {
+    hashtags match {
+      case Some(hashtags: String) => payload.applyHashtag(hashtags)
+      case _ => payload
     }
+  }
 
+  def applyUrl(payload: PayloadEntry): PayloadEntry = {
     url match {
-      case Some(url: String) => hashtagPayload.applyUrl(url)
-      case _ => hashtagPayload
+      case Some(url: String) => payload.applyUrl(url)
+      case _ => payload
     }
   }
 
-  def toStandardRule: PayloadEntry = toPayload
-}
-
-abstract class AdvancedRule(override val keyword:         String,
-                            override val emoji:           Option[String]=None,
-                            override val mentionedUserId: Option[String]=None,
-                            override val phrase:          Option[String]=None,
-                            override val hashtags:        Option[String]=None,
-                            override val url:             Option[String]=None,
-                            val fromUser:                 Option[String]=None, // excluding the @ character or the user's numeric user ID
-                            val toUser:                   Option[String]=None, // excluding the @ character or the user's numeric user ID
-                            val retweetsOfUser:           Option[String]=None  // excluding the @ character or the user's numeric user ID
-              ) extends StandardRule(keyword, emoji, mentionedUserId, phrase, hashtags, url) {
-
-  override def toPayload: PayloadEntry = {
-    val fromUserPayload = fromUser match {
-      case Some(fromUser: String) => AdvancedRule.super.toPayload.applyFromUser(fromUser)
-      case _ => AdvancedRule.super.toPayload
+  def applyFromUser(payload: PayloadEntry): PayloadEntry = {
+    fromUser match {
+      case Some(fromUser: String) => payload.applyFromUser(fromUser)
+      case _ => payload
     }
+  }
 
-    val toUserPayload = toUser match {
-      case Some(toUser: String) => fromUserPayload.applyToUser(toUser)
-      case _ => fromUserPayload
+  def applyToUser(payload: PayloadEntry): PayloadEntry = {
+    toUser match {
+      case Some(toUser: String) => payload.applyToUser(toUser)
+      case _ => payload
     }
+  }
 
+  def applyRetweetsOfUser(payload: PayloadEntry): PayloadEntry = {
     retweetsOfUser match {
-      case Some(retweetsOfUser: String) => toUserPayload.applyRetweetsOfUser(retweetsOfUser)
-      case _ => toUserPayload
+      case Some(retweetsOfUser: String) => payload.applyRetweetsOfUser(retweetsOfUser)
+      case _ => payload
     }
   }
 
-  def toAdvancedRule: PayloadEntry = toPayload
-}
-
-case class FullRule(override val keyword:         String,
-                    override val emoji:           Option[String]=None,
-                    override val mentionedUserId: Option[String]=None,
-                    override val phrase:          Option[String]=None,
-                    override val hashtags:        Option[String]=None,
-                    override val url:             Option[String]=None,
-                    override val fromUser:        Option[String]=None,
-                    override val toUser:          Option[String]=None,
-                    override val retweetsOfUser:  Option[String]=None,
-                    context:                      Option[String]=None,
-                    entity:                       Option[String]=None,
-                    conversationId:               Option[String]=None // matches Tweets that share a common conversation ID
-                  ) extends AdvancedRule(keyword, emoji, mentionedUserId, phrase, hashtags, url, fromUser, toUser, retweetsOfUser) {
-
-  override def toPayload: PayloadEntry = {
-    val contextPayload = context match {
-      case Some(context: String) => FullRule.super.toPayload.applyContext(context)
-      case _ => FullRule.super.toPayload
+  def applyContext(payload: PayloadEntry): PayloadEntry = {
+    context match {
+      case Some(context: String) => payload.applyContext(context)
+      case _ => payload
     }
+  }
 
-    val entityPayload = entity match {
-      case Some(entity: String) => contextPayload.applyEntity(entity)
-      case _ => contextPayload
+  def applyEntity(payload: PayloadEntry): PayloadEntry = {
+    entity match {
+      case Some(entity: String) => payload.applyEntity(entity)
+      case _ => payload
     }
+  }
 
+  def applyConversationId(payload: PayloadEntry): PayloadEntry = {
     conversationId match {
-      case Some(conversationId: String) => entityPayload.applyConversationId(conversationId)
-      case _ => entityPayload
+      case Some(conversationId: String) => payload.applyConversationId(conversationId)
+      case _ => payload
     }
+  }
+
+  def toPayload: PayloadEntry = {
+    toBasicPayload
+      .flatMap(payload => applyEmoji(payload))
+      .flatMap(payload => applyMentionedUserId(payload))
+      .flatMap(payload => applyPhrase(payload))
+      .flatMap(payload => applyHashTags(payload))
+      .flatMap(payload => applyUrl(payload))
+      .flatMap(payload => applyFromUser(payload))
+      .flatMap(payload => applyToUser(payload))
+      .flatMap(payload => applyRetweetsOfUser(payload))
+      .flatMap(payload => applyContext(payload))
+      .flatMap(payload => applyEntity(payload))
+      .flatMap(payload => applyConversationId(payload))
   }
 
   // TODO: apply Rule Options to Payload
@@ -145,5 +121,5 @@ case class FullRule(override val keyword:         String,
 
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val fullRuleFormat: RootJsonFormat[FullRule] = jsonFormat12(FullRule)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat12(Rule)
 }

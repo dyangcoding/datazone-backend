@@ -1,47 +1,47 @@
 package test
 
 import org.scalatest.funsuite.AnyFunSuite
-import rules.{BasicRule, FullRule, Rule}
+import rules.{Rule}
 import utils.JSONParser
 
 class RuleTest extends AnyFunSuite{
   test("keyword rule") {
-    val rule = FullRule(keyword = "basic keyword searching")
+    val rule = Rule(keyword = "basic keyword searching")
     print(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword with phrase") {
-    val rule = FullRule(keyword = "keyword", phrase = Option("how to achieve a happy dev life"))
+    val rule = Rule(keyword = "keyword", phrase = Option("how to achieve a happy dev life"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword with hashtag") {
-    val rule = FullRule(keyword = "keyword", hashtags = Option("twitterdev"))
+    val rule = Rule(keyword = "keyword", hashtags = Option("twitterdev"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword with userId") {
-    val rule = FullRule(keyword = "keyword", mentionedUserId = Option("dailyBerlin"))
+    val rule = Rule(keyword = "keyword", mentionedUserId = Option("dailyBerlin"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword with fromUser") {
-    val rule = FullRule(keyword = "keyword", fromUser = Option("dailyBerlin"))
+    val rule = Rule(keyword = "keyword", fromUser = Option("dailyBerlin"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword with toUser") {
-    val rule = FullRule(keyword = "keyword", toUser = Option("dailyBerlin"))
+    val rule = Rule(keyword = "keyword", toUser = Option("dailyBerlin"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword, phrase, hashtags") {
-    val rule = FullRule(keyword = "keyword", phrase = Option("how to achieve a better dev life"), hashtags = Option("#happiness"))
+    val rule = Rule(keyword = "keyword", phrase = Option("how to achieve a better dev life"), hashtags = Option("#happiness"))
     println(JSONParser.toJson(rule.toPayload))
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji") {
-    val rule = FullRule(
+    val rule = Rule(
       keyword = "keyword",
       phrase = Option("how to achieve a better dev life"),
       hashtags = Option("#happiness"),
@@ -51,7 +51,7 @@ class RuleTest extends AnyFunSuite{
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser") {
-    val rule = FullRule(
+    val rule = Rule(
       keyword = "keyword",
       phrase = Option("how to achieve a better dev life"),
       hashtags = Option("#happiness"),
@@ -63,7 +63,7 @@ class RuleTest extends AnyFunSuite{
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser") {
-    val rule = FullRule(
+    val rule = Rule(
       keyword = "keyword",
       phrase = Option("how to achieve a better dev life"),
       hashtags = Option("#happiness"),
@@ -77,7 +77,7 @@ class RuleTest extends AnyFunSuite{
   }
 
   test("All") {
-    val rule = FullRule(
+    val rule = Rule(
       keyword = "keyword",
       phrase = Option("how to achieve a better dev life"),
       hashtags = Option("#happiness"),
