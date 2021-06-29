@@ -10,47 +10,43 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
   }
 
   def applyHashtag(hashtag: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(hashtag, payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, hashtag)))
   }
 
   def applyUserId(userId: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(AppendAt(userId), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, AppendAt(userId))))
   }
 
   def applyFromUser(fromUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Append("from:", fromUser), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("from:", fromUser))))
   }
 
   def applyToUser(toUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Append("to:", toUser), payload.value)))
-  }
-
-  def applyTag(tagValue: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(payload.value, tag=Option(tagValue)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("to:", toUser))))
   }
 
   def applyEmoji(emoji: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(emoji, payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, emoji)))
   }
 
   def applyUrl(url: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(url, payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, url)))
   }
 
   def applyPhrase(phrase: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Group(phrase), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Group(phrase))))
   }
 
   def applyContext(context: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Append("context:", context), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("context:", context))))
   }
 
   def applyEntity(entity: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Append("entity:", entity), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("entity:", entity))))
   }
 
   def applyConversationId(conversationId: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(Append("conversation_id:", conversationId), payload.value)))
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("conversation_id:", conversationId))))
   }
 
   def applyRetweetsOfUser(retweetsOfUser: String): PayloadEntry = {
@@ -59,5 +55,9 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
 
   def group(): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(Group(payload.value)))
+  }
+
+  def applyTag(tagValue: String): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(payload.value, tag=Option(tagValue)))
   }
 }
