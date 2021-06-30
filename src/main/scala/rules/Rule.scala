@@ -102,6 +102,8 @@ case class Rule(keyword:         Option[String]=None,
                 retweetsOfUser:  Option[String]=None, // excluding the @ character or the user's numeric user ID
                 context:         Option[String]=None, // matches Tweets with a specific domain id and/or domain id
                 entity:          Option[String]=None, // matches Tweets with a specific entity string value
+                conversationId:  Option[String]=None, // matches Tweets that share a common conversation ID
+                options:         Option[RuleOptions] = None
 ){
 
   // starting point to build a PayloadEntry
@@ -123,78 +125,79 @@ case class Rule(keyword:         Option[String]=None,
     }
   }
 
-  def applyMentionedUserId(payload: PayloadEntry): PayloadEntry = {
+  private def applyMentionedUserId(payload: PayloadEntry): PayloadEntry = {
     mentionedUserId match {
       case Some(mentionedUserId: String) => payload.applyUserId(mentionedUserId)
       case _ => payload
     }
   }
 
-  def applyPhrase(payload: PayloadEntry): PayloadEntry = {
+  private def applyPhrase(payload: PayloadEntry): PayloadEntry = {
     phrase match {
       case Some(phrase: String) => payload.applyPhrase(phrase)
       case _ => payload
     }
   }
 
-  def applyHashTags(payload: PayloadEntry): PayloadEntry = {
+  private def applyHashTags(payload: PayloadEntry): PayloadEntry = {
     hashtags match {
       case Some(hashtags: String) => payload.applyHashtag(hashtags)
       case _ => payload
     }
   }
 
-  def applyUrl(payload: PayloadEntry): PayloadEntry = {
+  private def applyUrl(payload: PayloadEntry): PayloadEntry = {
     url match {
       case Some(url: String) => payload.applyUrl(url)
       case _ => payload
     }
   }
 
-  def applyFromUser(payload: PayloadEntry): PayloadEntry = {
+  private def applyFromUser(payload: PayloadEntry): PayloadEntry = {
     fromUser match {
       case Some(fromUser: String) => payload.applyFromUser(fromUser)
       case _ => payload
     }
   }
 
-  def applyToUser(payload: PayloadEntry): PayloadEntry = {
+  private def applyToUser(payload: PayloadEntry): PayloadEntry = {
     toUser match {
       case Some(toUser: String) => payload.applyToUser(toUser)
       case _ => payload
     }
   }
 
-  def applyRetweetsOfUser(payload: PayloadEntry): PayloadEntry = {
+  private def applyRetweetsOfUser(payload: PayloadEntry): PayloadEntry = {
     retweetsOfUser match {
       case Some(retweetsOfUser: String) => payload.applyRetweetsOfUser(retweetsOfUser)
       case _ => payload
     }
   }
 
-  def applyContext(payload: PayloadEntry): PayloadEntry = {
+  private def applyContext(payload: PayloadEntry): PayloadEntry = {
     context match {
       case Some(context: String) => payload.applyContext(context)
       case _ => payload
     }
   }
 
-  def applyEntity(payload: PayloadEntry): PayloadEntry = {
+  private def applyEntity(payload: PayloadEntry): PayloadEntry = {
     entity match {
       case Some(entity: String) => payload.applyEntity(entity)
       case _ => payload
     }
   }
 
-  def applyConversationId(payload: PayloadEntry): PayloadEntry = {
+  private def applyConversationId(payload: PayloadEntry): PayloadEntry = {
     conversationId match {
       case Some(conversationId: String) => payload.applyConversationId(conversationId)
       case _ => payload
     }
   }
 
-  def toPayload: PayloadEntry = {
+  private def toPayloadInternal: PayloadEntry = {
     toBasicPayload
+      .flatMap(payload => applyKeyword(payload))
       .flatMap(payload => applyEmoji(payload))
       .flatMap(payload => applyMentionedUserId(payload))
       .flatMap(payload => applyPhrase(payload))
@@ -208,6 +211,13 @@ case class Rule(keyword:         Option[String]=None,
       .flatMap(payload => applyConversationId(payload))
   }
 
+  def toPayload: PayloadEntry = {
+    val result = toPayloadInternal
+    val ruleOptions: RuleOptions = options match {
+      case Some(ruleOptions: RuleOptions) => ruleOptions
+      case _ => RuleOptions.apply()
+    }
+    result.flatMap(payload => ruleOptions.applyOptions(payload))
   }
 }
 

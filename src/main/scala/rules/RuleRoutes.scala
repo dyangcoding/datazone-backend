@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
+import utils.JSONParser
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -20,10 +21,10 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
     pathPrefix("rules") {
       concat(
         post {
-          entity(as[FullRule]) { rule =>
-            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
+          entity(as[Rule]) { rule =>
+            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ValidateRule(rule, _))
             onSuccess(updatedRule) {
-              case RuleRepository.ActionSucceeded => complete("Rule updated")
+              case RuleRepository.ActionSucceeded(result) => complete(JSONParser.toJson(result))
               case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
             }
           }
@@ -31,7 +32,7 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
         delete {
           val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
           onSuccess(clearRules) {
-            case RuleRepository.ActionSucceeded => complete("Rule cleared")
+            case RuleRepository.ActionSucceeded(result) => complete(JSONParser.toJson(result))
             case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
           }
         },
