@@ -1,7 +1,5 @@
 package utils
 
-import rules.PayloadEntry
-
 object StringUtils {
   trait Operator
 
@@ -73,12 +71,9 @@ object StringUtils {
     "(".concat(value).concat(")")
   }
 
-  // TODO: build json payload for filtered stream API
-  def BuildJsonPayload(payload: PayloadEntry): String = {
-    val payload =
-      """
-        |
-        |""".stripMargin
-    payload
-  }
+  def langList(): Seq[String] =
+    List("am", "ar", "hy", "eu", "bn", "bs", "bg", "my", "hr", "ca", "cs", "da", "nl", "en", "et", "fi", "ka",
+      "de", "el", "gu", "ht", "iw", "hi", "hi-Latn", "hu", "is", "in", "it", "ja", "kn", "km", "ko", "lo", "lv",
+      "lt", "ml", "dv", "mr", "ne", "no", "or", "pa", "ps", "fa", "pl", "pt", "ro", "ru", "sr", "zh-CN", "sd",
+      "si", "sk", "sl", "ckb", "es", "sv", "tl", "ta", "te", "th", "zh-TW", "tr", "uk", "ug", "vi", "cy")
 }

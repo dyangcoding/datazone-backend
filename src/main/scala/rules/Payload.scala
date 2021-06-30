@@ -99,6 +99,10 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
     this.flatMap(payload => PayloadEntry(And(payload.value, text)))
   }
 
+  def applyLanguage(lang: String): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("lang:", lang))))
+  }
+
   def applySample(sample: Int): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(And(payload.value, Append("sample:", sample.toString))))
   }
