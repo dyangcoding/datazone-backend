@@ -107,8 +107,8 @@ case class RuleOptions(isRetweet:    Option[Boolean]=None, // match Tweets that 
   }
 }
 
-case class Rule(keyword:         Option[String]=None,
-                emoji:           Option[String]=None, // matches a keyword within the body of a Tweet
+case class Rule(keyword:         Option[String]=None, // matches a keyword within the body of a Tweet
+                emoji:           Option[String]=None,
                 mentionedUserId: Option[String]=None, // including the @ character
                 phrase:          Option[String]=None, // matches the exact phrase within the body of a Tweet
                 hashtags:        Option[String]=None, // matches any Tweet containing a recognized hashtag
@@ -121,37 +121,44 @@ case class Rule(keyword:         Option[String]=None,
                 conversationId:  Option[String]=None, // matches Tweets that share a common conversation ID
                 options:         Option[RuleOptions] = None
 ){
+  // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
+  require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
 
   // Rule data validation
   require(keyword.isEmpty || (keyword.forall(_.nonEmpty) && keyword.forall(text => text.length <= 256)),
-        "Keyword must not be empty and not longer than 128 characters")
+        "Keyword must not be empty and not longer than 128 characters.")
 
   require(mentionedUserId.isEmpty || (mentionedUserId.forall(_.nonEmpty) && mentionedUserId.exists(text => text.startsWith("@"))),
-        "UserId must not be empty and start with '@'")
+        "UserId must not be empty and start with '@'.")
 
   require(hashtags.isEmpty || (hashtags.forall(_.nonEmpty) && hashtags.exists(text => text.startsWith("#"))),
-        "Hashtags must not be empty and start with '#'")
+        "Hashtags must not be empty and start with '#'.")
 
   require(url.isEmpty || (url.forall(_.nonEmpty) && url.exists(text => text.startsWith("https://") || text.startsWith("http://"))),
-        "Url must not be empty and start with 'https://' or 'http://'")
+        "Url must not be empty and start with 'https://' or 'http://'.")
 
   require(fromUser.isEmpty || (fromUser.forall(_.nonEmpty) && fromUser.exists(text => !text.startsWith("@"))),
-        "FromUser must not be empty and not start with '@'")
+        "FromUser must not be empty and not start with '@'.")
 
   require(toUser.isEmpty || (toUser.forall(_.nonEmpty) && toUser.exists(text => !text.startsWith("@"))),
-        "ToUser must not be empty and not start with '@'")
+        "ToUser must not be empty and not start with '@'.")
 
   require(retweetsOfUser.isEmpty || (retweetsOfUser.forall(_.nonEmpty) && retweetsOfUser.exists(text => !text.startsWith("@"))),
-        "RetweetOfUser must not be empty and not start with '@'")
+        "RetweetOfUser must not be empty and not start with '@'.")
 
   // TODO validate context, entity, conversationID
 
   // Rule Options validation
   require(hashtags.isEmpty || (hashtags.forall(_.nonEmpty) && options.forall(options => options.hasHashtags.contains(true))),
-        "In order to match Tweets that contain Hashtag, The Option hasHashtags must be enabled")
+        "In order to match Tweets that contain Hashtag, The Option hasHashtags must be enabled.")
 
   // TODO: validate all properties, all true for testing purpose
   def isValidate: Boolean = true
+
+  private def atLeastOne(): Boolean =
+    keyword.nonEmpty || emoji.nonEmpty || mentionedUserId.nonEmpty || phrase.nonEmpty ||
+      hashtags.nonEmpty || url.nonEmpty || fromUser.nonEmpty || toUser.nonEmpty ||
+      retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty
 
   // starting point to build a PayloadEntry
   def toBasicPayload: PayloadEntry = PayloadEntry(value = "")
