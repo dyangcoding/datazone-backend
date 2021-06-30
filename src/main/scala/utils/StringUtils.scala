@@ -56,7 +56,7 @@ object StringUtils {
   }
 
   def And(left: String, right: String): String = {
-    left.concat(" ").concat(right)
+    left.concat(" ").concat(right).strip()
   }
 
   def Or(left: String, right: String): String = {
