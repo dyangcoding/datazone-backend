@@ -3,6 +3,94 @@ package rules
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
+case class RuleOptions(isRetweet:    Option[Boolean]=None, // match Tweets that are truly retweets
+                       isVerified:   Option[Boolean]=None, // deliver only Tweets whose authors are verified by Twitter
+                       isReply:      Option[Boolean]=None, // deliver only explicit replies that match a rule
+                       hasHashtags:  Option[Boolean]=None, // match Tweets that contain at least one hashtag
+                       hasLinks:     Option[Boolean]=None, // match Tweets which contain links and media in the Tweet body
+                       hasMedia:     Option[Boolean]=None, // match Tweets that contain a media object, such as a photo, GIF, or video, as determined by Twitter
+                       hasImages:    Option[Boolean]=None, // match Tweets that contain a recognized URL to an image
+                       hasVideos:    Option[Boolean]=None, // match Tweets that contain native Twitter videos, uploaded directly to Twitter
+                       sample:       Option[Int]    =None  // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
+                      ) {
+
+  private def applyIsRetweet(payload: PayloadEntry): PayloadEntry = {
+    isRetweet match {
+      case Some(isRetweet: Boolean) => payload.applyIsRetweet(isRetweet)
+      case _ => payload
+    }
+  }
+
+  private def applyIsVerified(payload: PayloadEntry): PayloadEntry = {
+    isVerified match {
+      case Some(isVerified: Boolean) => payload.applyIsVerified(isVerified)
+      case _ => payload
+    }
+  }
+
+  private def applyIsReply(payload: PayloadEntry): PayloadEntry = {
+    isReply match {
+      case Some(isReply: Boolean) => payload.applyIsReply(isReply)
+      case _ => payload
+    }
+  }
+
+  private def applyHasHashtags(payload: PayloadEntry): PayloadEntry = {
+    hasHashtags match {
+      case Some(hasHashtags: Boolean) => payload.applyHasHashtags(hasHashtags)
+      case _ => payload
+    }
+  }
+
+  private def applyHasLinks(payload: PayloadEntry): PayloadEntry = {
+    hasLinks match {
+      case Some(hasLinks: Boolean) => payload.applyHasLinks(hasLinks)
+      case _ => payload
+    }
+  }
+
+  private def applyHasMedia(payload: PayloadEntry): PayloadEntry = {
+    hasMedia match {
+      case Some(hasHasMedia: Boolean) => payload.applyHasMedia(hasHasMedia)
+      case _ => payload
+    }
+  }
+
+  private def applyHasImages(payload: PayloadEntry): PayloadEntry = {
+    hasImages match {
+      case Some(hasImage: Boolean) => payload.applyHasImages(hasImage)
+      case _ => payload
+    }
+  }
+
+  private def applyHasVideos(payload: PayloadEntry): PayloadEntry = {
+    hasVideos match {
+      case Some(hasVideos: Boolean) => payload.applyHasVideos(hasVideos)
+      case _ => payload
+    }
+  }
+
+  private def applySample(payload: PayloadEntry): PayloadEntry = {
+    sample match {
+      case Some(simple: Int) => payload.applySample(simple)
+      case _ => payload.applySample(30)
+    }
+  }
+
+  def applyOptions(payload: PayloadEntry): PayloadEntry = {
+    payload
+      .flatMap(payload => applyIsRetweet(payload))
+      .flatMap(payload => applyIsVerified(payload))
+      .flatMap(payload => applyIsReply(payload))
+      .flatMap(payload => applyHasHashtags(payload))
+      .flatMap(payload => applyHasLinks(payload))
+      .flatMap(payload => applyHasMedia(payload))
+      .flatMap(payload => applyHasImages(payload))
+      .flatMap(payload => applyHasVideos(payload))
+      .flatMap(payload => applySample(payload))
+  }
+}
+
 case class Rule(keyword:         Option[String]=None,
                 emoji:           Option[String]=None, // matches a keyword within the body of a Tweet
                 mentionedUserId: Option[String]=None, // including the @ character
@@ -120,13 +208,11 @@ case class Rule(keyword:         Option[String]=None,
       .flatMap(payload => applyConversationId(payload))
   }
 
-  // TODO: apply Rule Options to Payload
-  def applyOptions(entry: PayloadEntry): PayloadEntry = {
-    ???
   }
 }
 
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat12(Rule)
+  implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat9(RuleOptions)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat13(Rule)
 }

@@ -9,6 +9,10 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
     transformer(this)
   }
 
+  def applyKeyword(keyword: String): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(And(payload.value, keyword)))
+  }
+
   def applyHashtag(hashtag: String): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(And(payload.value, hashtag)))
   }
@@ -51,6 +55,52 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
 
   def applyRetweetsOfUser(retweetsOfUser: String): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(And(payload.value, Append("retweetOf:", retweetsOfUser))))
+  }
+
+  // apply Rule Options
+
+  def applyIsRetweet(isRetweet: Boolean): PayloadEntry = {
+    val text = if (isRetweet) "is:retweet" else "-is:retweet"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyIsVerified(isVerified: Boolean): PayloadEntry = {
+    val text = if (isVerified) "is:verified" else "-is:verified"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyIsReply(isReply: Boolean): PayloadEntry = {
+    val text = if (isReply) "is:reply" else "-is:reply"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyHasHashtags(hasHashtags: Boolean): PayloadEntry = {
+    val text = if (hasHashtags) "has:hashtags" else "-has:hashtags"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyHasLinks(hasLinks: Boolean): PayloadEntry = {
+    val text = if (hasLinks) "has:links" else "-has:links"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyHasMedia(hasMedia: Boolean): PayloadEntry = {
+    val text = if (hasMedia) "has:media" else "-has:media"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyHasImages(hasImages: Boolean): PayloadEntry = {
+    val text = if (hasImages) "has:images" else "-has:images"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applyHasVideos(hasVideos: Boolean): PayloadEntry = {
+    val text = if (hasVideos) "has:videos" else "-has:videos"
+    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
+  }
+
+  def applySample(sample: Int): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("sample:", sample.toString))))
   }
 
   def group(): PayloadEntry = {
