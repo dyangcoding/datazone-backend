@@ -1,102 +1,69 @@
 package test
 
 import org.scalatest.funsuite.AnyFunSuite
-import rules.Rule
-import utils.JSONParser
+import rules.{Rule, RuleOptions}
 
-class RuleTest extends AnyFunSuite{
-  test("keyword rule") {
-    val rule = Rule(keyword = Some("basic keyword searching"))
-    print(JSONParser.toJson(rule.toPayload))
+class RuleTest extends AnyFunSuite {
+  test("keyword more than 256 characters") {
+    assertThrows[IllegalArgumentException] {
+      Rule(keyword =
+        Some("When warming diced bagels, be sure they are room temperature, " +
+          "Silence yearns when you handle with mineral, Stars tremble with alarm!, " +
+          "Why does the dosi malfunction?, Our enlightened everything for milk is to " +
+          "gain others theosophically, Private happinesses k."))
+    }
   }
 
-  test("keyword with phrase") {
-    val rule = Rule(keyword = Some("keyword"),
-      phrase = Some("how to achieve a happy dev life"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("mentionedUserId without '@'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(mentionedUserId = Some("twitterAPI"))
+    }
   }
 
-  test("keyword with hashtag") {
-    val rule = Rule(keyword = Some("keyword"),
-      hashtags = Some("twitterdev"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("hashTags without '#'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(hashtags = Some("filtered Stream"))
+    }
   }
 
-  test("keyword with userId") {
-    val rule = Rule(keyword = Some("keyword"),
-      mentionedUserId = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("Url without 'http'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(url = Some("docs.twitter.com"))
+    }
   }
 
-  test("keyword with fromUser") {
-    val rule = Rule(keyword = Some("keyword"),
-      fromUser = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("Url without valid 'http' or 'https' prefix") {
+    assertThrows[IllegalArgumentException] {
+      Rule(url = Some("http//:docs.twitter.com"))
+    }
   }
 
-  test("keyword with toUser") {
-    val rule = Rule(keyword = Some("keyword"),
-      toUser = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("Url with valid 'http'") {
+    assert(Rule(url = Some("https://developer.twitter.com")).url.forall(url => url.startsWith("https://")))
   }
 
-  test("keyword, phrase, hashtags") {
-    val rule = Rule(keyword = Some("keyword"),
-      phrase = Some("how to achieve a better dev life"),
-      hashtags = Some("#happiness"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("fromUser with '@'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(fromUser = Some("@dailyBerlin"))
+    }
   }
 
-  test("keyword, phrase, hashtags, mentionedUser, emoji") {
-    val rule = Rule(
-      keyword = Some("keyword"),
-      phrase = Some("how to achieve a better dev life"),
-      hashtags = Some("#happiness"),
-      emoji = Some("dummyEmoji"),
-      mentionedUserId = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("toUser with '@'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(toUser = Some("@happinessForEver"))
+    }
   }
 
-  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser") {
-    val rule = Rule(
-      keyword = Some("keyword"),
-      phrase = Some("how to achieve a better dev life"),
-      hashtags = Some("#happiness"),
-      emoji = Some("dummyEmoji"),
-      mentionedUserId = Some("dailyBerlin"),
-      fromUser = Some("twitterAPI"),
-      toUser = Some("twitterDev"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("retweetsOfUser with '@'") {
+    assertThrows[IllegalArgumentException] {
+      Rule(retweetsOfUser = Some("@twitterDev"))
+    }
   }
 
-  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser") {
-    val rule = Rule(
-      keyword = Some("keyword"),
-      phrase = Some("how to achieve a better dev life"),
-      hashtags = Some("#happiness"),
-      emoji = Some("dummyEmoji"),
-      mentionedUserId = Some("dailyBerlin"),
-      fromUser = Some("twitterAPI"),
-      toUser = Some("twitterDev"),
-      url = Some("http:twitterFilteredStreamApi"),
-      retweetsOfUser = Some("IntellijLife"))
-    println(JSONParser.toJson(rule.toPayload))
-  }
-
-  test("All") {
-    val rule = Rule(
-      keyword = Some("keyword"),
-      phrase = Some("how to achieve a better dev life"),
-      hashtags = Some("#happiness"),
-      emoji = Some("dummyEmoji"),
-      mentionedUserId = Some("dailyBerlin"),
-      fromUser = Some("twitterAPI"),
-      toUser = Some("twitterDev"),
-      url = Some("http:twitterFilteredStreamApi"),
-      retweetsOfUser = Some("IntellijLife"),
-      context = Some("10.799022225751871488"),
-      entity = Some("Berlin HTW"),
-      conversationId = Some("1334987486343299072"))
-    println(JSONParser.toJson(rule.toPayload))
+  test("match tweets with hashtag with has:hashtags disabled") {
+    assertThrows[IllegalArgumentException] {
+      val rule = Rule(hashtags = Some("#ApacheSpark"), options = Some(RuleOptions.apply(hasHashtags = Some(false))))
+      println(rule.toPayload)
+    }
   }
 }
