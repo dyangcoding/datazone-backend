@@ -3,7 +3,7 @@ package rules
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-case class Rule(keyword:         String,
+case class Rule(keyword:         Option[String]=None,
                 emoji:           Option[String]=None, // matches a keyword within the body of a Tweet
                 mentionedUserId: Option[String]=None, // including the @ character
                 phrase:          Option[String]=None, // matches the exact phrase within the body of a Tweet
@@ -14,13 +14,20 @@ case class Rule(keyword:         String,
                 retweetsOfUser:  Option[String]=None, // excluding the @ character or the user's numeric user ID
                 context:         Option[String]=None, // matches Tweets with a specific domain id and/or domain id
                 entity:          Option[String]=None, // matches Tweets with a specific entity string value
-                conversationId:  Option[String]=None // matches Tweets that share a common conversation ID
 ){
 
   // starting point to build a PayloadEntry
-  def toBasicPayload: PayloadEntry = PayloadEntry(value = keyword).group()
+  def toBasicPayload: PayloadEntry = PayloadEntry(value = "")
 
-  def applyEmoji(payload: PayloadEntry): PayloadEntry = {
+  private def applyKeyword(payload: PayloadEntry): PayloadEntry = {
+    keyword match {
+      case Some(keyword: String) =>
+        payload.applyKeyword(keyword)
+      case _ => payload
+    }
+  }
+
+  private def applyEmoji(payload: PayloadEntry): PayloadEntry = {
     emoji match {
       case Some(emoji: String) =>
         payload.applyEmoji(emoji)
