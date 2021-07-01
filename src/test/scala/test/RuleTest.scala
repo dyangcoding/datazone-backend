@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import rules.{Rule, RuleOptions}
 
 class RuleTest extends AnyFunSuite {
-  test("keyword more than 256 characters") {
+  test("keyword extends 256 characters") {
     assertThrows[IllegalArgumentException] {
       Rule(keyword =
         Some("When warming diced bagels, be sure they are room temperature, Silence yearns when you handle with mineral," +
@@ -13,53 +13,53 @@ class RuleTest extends AnyFunSuite {
     }
   }
 
-  test("mentionedUserId without '@'") {
+  test("mentionedUserId requires '@'") {
     assertThrows[IllegalArgumentException] {
       Rule(mentionedUserId = Some("twitterAPI"))
     }
   }
 
-  test("hashTags without '#'") {
+  test("hashTags requires '#'") {
     assertThrows[IllegalArgumentException] {
       Rule(hashtags = Some("filtered Stream"))
     }
   }
 
-  test("Url without 'http'") {
+  test("Url requires 'http://' or 'https://' as prefix") {
     assertThrows[IllegalArgumentException] {
       Rule(url = Some("docs.twitter.com"))
     }
   }
 
-  test("Url without valid 'http' or 'https' prefix") {
+  test("Url with invalid prefix") {
     assertThrows[IllegalArgumentException] {
       Rule(url = Some("http//:docs.twitter.com"))
     }
   }
 
-  test("Url with valid 'http'") {
+  test("Url with valid prefix") {
     assert(Rule(url = Some("https://developer.twitter.com")).url.forall(url => url.startsWith("https://")))
   }
 
-  test("fromUser with '@'") {
+  test("fromUser requires no '@' as prefix") {
     assertThrows[IllegalArgumentException] {
       Rule(fromUser = Some("@dailyBerlin"))
     }
   }
 
-  test("toUser with '@'") {
+  test("toUser requires no '@' as prefix") {
     assertThrows[IllegalArgumentException] {
       Rule(toUser = Some("@happinessForEver"))
     }
   }
 
-  test("retweetsOfUser with '@'") {
+  test("retweetsOfUser rquires no '@' as prefix") {
     assertThrows[IllegalArgumentException] {
       Rule(retweetsOfUser = Some("@twitterDev"))
     }
   }
 
-  test("match tweets with hashtag with has:hashtags disabled") {
+  test("matching tweets with hashtags requires has:hashtags enabled") {
     assertThrows[IllegalArgumentException] {
       val rule = Rule(hashtags = Some("#ApacheSpark"), options = Some(RuleOptions.apply(hasHashtags = Some(false))))
       println(rule.toPayload)
