@@ -126,10 +126,10 @@ case class Rule(keyword:         Option[String]=None, // matches a keyword withi
 
   // Rule data validation
   require(keyword.isEmpty || (keyword.forall(_.nonEmpty) && keyword.forall(text => text.length <= 256)),
-        "Keyword must not be empty and not longer than 128 characters.")
+        "Keyword must not be empty and not longer than 256 characters.")
 
   require(mentionedUserId.isEmpty || (mentionedUserId.forall(_.nonEmpty) && mentionedUserId.exists(text => text.startsWith("@"))),
-        "UserId must not be empty and start with '@'.")
+        "MentionedUserId must not be empty and start with '@'.")
 
   require(hashtags.isEmpty || (hashtags.forall(_.nonEmpty) && hashtags.exists(text => text.startsWith("#"))),
         "Hashtags must not be empty and start with '#'.")
@@ -160,8 +160,8 @@ case class Rule(keyword:         Option[String]=None, // matches a keyword withi
       hashtags.nonEmpty || url.nonEmpty || fromUser.nonEmpty || toUser.nonEmpty ||
       retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty
 
-  // starting point to build a PayloadEntry
-  def toBasicPayload: PayloadEntry = PayloadEntry(value = "")
+  // starting point to build a PayloadEntry, note that PayloadEntry requires a non empty value
+  def toBasicPayload: PayloadEntry = PayloadEntry(value = " ")
 
   private def applyKeyword(payload: PayloadEntry): PayloadEntry = {
     keyword match {

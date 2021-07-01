@@ -2,9 +2,23 @@ package rules
 
 import utils.StringUtils.{And, Append, AppendAt, Group}
 
-case class Payload(operation: String, entries: Seq[PayloadEntry])
+case class Payload(operation: String, entries: Seq[PayloadEntry]) {
+  // TODO maybe add more constrains Add, Delete see TwitterAPI, later
+  require(operation.nonEmpty && (operation == "add" || operation == "delete"))
+
+  // Standard Account Setting only allows 25 concurrent rules
+  require(entries.length <= 25)
+}
 
 case class PayloadEntry(value: String, tag: Option[String] = None) {
+  // payload's value must not be empty and not extend 512 characters
+  require(value.nonEmpty && value.length <= 512,
+        "payload's value must not be empty and not extend 512 characters.")
+
+  // payload's tag could either be empty or must not be extend 128 characters
+  require(tag.isEmpty || (tag.forall(_.nonEmpty) && tag.forall(text => text.length <= 128)),
+        "payload's tag could either be empty or must not be extend 128 characters")
+
   def flatMap(transformer: rules.PayloadEntry => rules.PayloadEntry): rules.PayloadEntry = {
     transformer(this)
   }

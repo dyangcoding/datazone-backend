@@ -7,10 +7,9 @@ class RuleTest extends AnyFunSuite {
   test("keyword more than 256 characters") {
     assertThrows[IllegalArgumentException] {
       Rule(keyword =
-        Some("When warming diced bagels, be sure they are room temperature, " +
-          "Silence yearns when you handle with mineral, Stars tremble with alarm!, " +
-          "Why does the dosi malfunction?, Our enlightened everything for milk is to " +
-          "gain others theosophically, Private happinesses k."))
+        Some("When warming diced bagels, be sure they are room temperature, Silence yearns when you handle with mineral," +
+          " Stars tremble with alarm!, Why does the dosi malfunction?, Our enlightened everything for milk is to " +
+          "gain others, Queens resist on turbulence at deep!"))
     }
   }
 
