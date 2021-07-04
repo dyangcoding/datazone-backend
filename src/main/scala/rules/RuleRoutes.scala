@@ -5,8 +5,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
-import utils.JSONParser
 
+import utils.JSONParser
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -22,9 +22,22 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
       concat(
         post {
           entity(as[Rule]) { rule =>
-            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ValidateRule(rule, _))
+            val insertedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
+            onSuccess(insertedRule) {
+              case RuleRepository.ActionSucceeded(result) => {
+                complete(JSONParser.toJson(result))
+              }
+              case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+            }
+          }
+        },
+        put {
+          entity(as[Rule]) { rule =>
+            val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.UpdateRule(rule, _))
             onSuccess(updatedRule) {
-              case RuleRepository.ActionSucceeded(result) => complete(JSONParser.toJson(result))
+              case RuleRepository.ActionSucceeded(result) => {
+                complete(JSONParser.toJson(result))
+              }
               case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
             }
           }

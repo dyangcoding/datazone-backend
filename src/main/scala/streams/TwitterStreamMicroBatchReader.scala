@@ -1,6 +1,6 @@
 package streams
 
-import db.DbWriter
+import db.{RuleService, TweetService}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.sources.v2.DataSourceOptions
@@ -46,7 +46,7 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
             val tweetOpt = Tweet.createTweet(tweet)
             tweetOpt match {
               case Some(t) => {
-                DbWriter.createTweet(t)
+                TweetService.InsertOne(t)
                 data.tweetList.append(t)
                 data.currentOffset = data.currentOffset + 1
                 data.incomingEventCounter = data.incomingEventCounter + 1;
