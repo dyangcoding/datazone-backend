@@ -1,6 +1,26 @@
 package rules
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import reactivemongo.api.bson.{BSONDocumentHandler, BSONObjectID, Macros}
+import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, RootJsonFormat, deserializationError}
+import utils.JSONParser
+
+import scala.util.{Failure, Success}
+
+case class Rule(_id:             Option[BSONObjectID],      // require internal for mongo
+                keyword:         Option[String]      =None, // matches a keyword within the body of a Tweet
+                emoji:           Option[String]      =None,
+                mentionedUserId: Option[String]      =None, // including the @ character
+                phrase:          Option[String]      =None, // matches the exact phrase within the body of a Tweet
+                hashtags:        Option[String]      =None, // matches any Tweet containing a recognized hashtag
+                url:             Option[String]      =None, // performs a tokenized match on any validly-formatted URL of a Tweet
+                fromUser:        Option[String]      =None, // excluding the @ character or the user's numeric user ID
+                toUser:          Option[String]      =None, // excluding the @ character or the user's numeric user ID
+                retweetsOfUser:  Option[String]      =None, // excluding the @ character or the user's numeric user ID
+                context:         Option[String]      =None, // matches Tweets with a specific domain id and/or domain id
+                entity:          Option[String]      =None, // matches Tweets with a specific entity string value
+                conversationId:  Option[String]      =None, // matches Tweets that share a common conversation ID
+                options:         Option[RuleOptions] =None
 ){
   // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
   require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
@@ -156,8 +176,25 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
   }
 }
 
+case object Rule {
+  implicit val RuleHandler: BSONDocumentHandler[Rule] = Macros.handler[Rule]
+}
+
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions)
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat13(Rule)
+  implicit object BsonObjectIDFormat extends RootJsonFormat[BSONObjectID] {
+    override def read(json: JsValue): BSONObjectID =
+      json match {
+        case JsString(oid) => BSONObjectID.parse(oid) match {
+          case Success(parsedObjectId) => parsedObjectId
+          case Failure(_)              => deserializationError("BSONObjectID could not be created from given string")
+        }
+        case _ => throw DeserializationException("ObjectID could not be converted to BSONObjectID object")
+      }
+
+    override def write(obj: BSONObjectID): JsValue = JsString(JSONParser.toJson(obj))
+  }
+
+  implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions.apply)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat14(Rule.apply)
 }
