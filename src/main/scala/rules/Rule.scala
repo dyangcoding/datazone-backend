@@ -7,7 +7,7 @@ import utils.JSONParser
 
 import scala.util.{Failure, Success}
 
-case class Rule(_id:             Option[BSONObjectID],      // require internal for mongo
+case class Rule(_id:             Option[BSONObjectID]=None,      // require internal for mongo
                 keyword:         Option[String]      =None, // matches a keyword within the body of a Tweet
                 emoji:           Option[String]      =None,
                 mentionedUserId: Option[String]      =None, // including the @ character
