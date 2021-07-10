@@ -24,6 +24,8 @@ libraryDependencies ++= Seq(
 
   // Http Library
   "org.scalaj" %% "scalaj-http" % "2.4.2",
+  // CORS Support
+  "ch.megard" %% "akka-http-cors" % "1.1.1",
 
   // Reactive Mongo
   "org.reactivemongo" %% "reactivemongo" % MongoReactive,

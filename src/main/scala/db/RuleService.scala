@@ -1,5 +1,7 @@
 package db
 
+import reactivemongo.api.{Cursor, ReadPreference}
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import reactivemongo.api.bson.BSONDocument
@@ -9,6 +11,13 @@ import rules.Rule
 
 object RuleService {
   val collection: Future[BSONCollection] = DBUtil.GetCollection("rules")
+
+  def FetchAll(): Future[Seq[Rule]] = {
+    collection.flatMap(_.find(BSONDocument())
+      .cursor[Rule](ReadPreference.primary)
+      .collect[Seq](25, Cursor.FailOnError[Seq[Rule]]())
+    )
+  }
 
   def FindById(id: String): Future[Option[Rule]] = {
     collection.flatMap(_.find(
@@ -21,11 +30,7 @@ object RuleService {
   }
 
   def InsertOne(rule: Rule): Future[WriteResult] = {
-    collection.flatMap(_.update.one(
-      q = BSONDocument("id" -> rule._id),
-      u = BSONDocument("$set" -> rule),
-      upsert = true,
-    ))
+    collection.flatMap(_.insert.one(rule))
   }
 
   def UpdateOne(rule: Rule): Future[Option[Rule]] = {
