@@ -30,8 +30,8 @@ class TwitterConnectionMock extends TwitterConnection{
               case _ => ""
             }
 
-              Thread.sleep(TWEET_DELAY_IN_MS)
-              synchronized {sendTweetToListeningClasses(tweet)}
+            Thread.sleep(TWEET_DELAY_IN_MS)
+            synchronized {sendTweetToListeningClasses(tweet)}
           } catch {
             case e: Exception => println("****kein Create MockTweet möglich****" + line + "***")
           }
