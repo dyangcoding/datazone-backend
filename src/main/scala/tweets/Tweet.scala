@@ -33,7 +33,7 @@ case object Context {
 /*
   Retrieve UserId and Username from the "mentions" List within the entities Object
  */
-case class User(user_id:String, username:String)
+case class User(userId:String, username:String)
 
 case object User {
   val userHandler: BSONHandler[User] = Macros.handler[User]
@@ -74,16 +74,16 @@ case class UpstreamRule(id: String, tag: String)
 
 // note: remove conversation ID for now
 case class Tweet(
-                  id:                                     String, // The unique identifier of the requested Tweet
-                  text:                                   String, // The actual UTF-8 text of the Tweet
-                  createdAt:                              String, // Creation time of the Tweet
-                  authorId:                               String, // The unique identifier of the User who posted this Tweet
+                  id:                                     String,               // The unique identifier of the requested Tweet
+                  text:                                   String,               // The actual UTF-8 text of the Tweet
+                  createdAt:                              String,               // Creation time of the Tweet
+                  authorId:                               String,               // The unique identifier of the User who posted this Tweet
                   @Reader(contextSeqReader) context:      Seq[Context] =List(), // Contains context annotations for the Tweet, default empty list
                   @Reader(entitiesSeqReader) entities:    Seq[Entities]=List(), // Entities which have been parsed out of the text of the Tweet, default empty list
-                  matchingRules:                          Seq[Rule] = List(), // annotations about which filtered Rule this tweet was matched with, default empty list
-                  //source:                                 String, // The name of the app the user Tweeted from
-                  lang:                                   String
-                )               // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
+                  matchingRules:                          Seq[Rule] = List(),   // annotations about which filtered Rule this tweet was matched with, default empty list
+                  //source:                                 String,             // The name of the app the user Tweeted from
+                  lang:                                   String                // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
+                )
 {
   def flatMap(transformer: tweets.Tweet => tweets.Tweet): tweets.Tweet = {
     transformer(this)
@@ -92,20 +92,19 @@ case class Tweet(
 
 case object Tweet {
   // TODO: only utilise data and matching rule maps for now, more of includesMap later on
+  //  val includesMap: Map[String, Any] = jsonMap("includes").asInstanceOf[Map[String, Any]]
   def createTweet(json: String): Option[Tweet] = {
     JSONParser.parseJson(json) match {
-      case Some(jsonMap: Map[String, Any]) => {
+      case Some(jsonMap: Map[String, Any]) =>
         this.buildBasicTweet(jsonMap) match {
-          case Some(tweet) => {
+          case Some(tweet) =>
             val dataMap: Map[String, Any] = jsonMap("data").asInstanceOf[Map[String, Any]]
             val tweetWithContext = tweet.flatMap(tweet => applyContext(tweet, dataMap))
-            //val includesMap: Map[String, Any] = jsonMap("includes").asInstanceOf[Map[String, Any]]
             val tweetWithEntities = tweetWithContext.flatMap(tweet => applyEntities(tweet, dataMap))
-            Some(tweetWithEntities)
-          }
+            val tweetWithMatchingRules = tweetWithEntities.flatMap(tweet => applyMatchingRules(tweet, jsonMap))
+            Some(tweetWithMatchingRules)
           case None => None
         }
-      }
       case _ => None
     }
   }
@@ -181,10 +180,13 @@ case object Tweet {
   }
 
   def extractMentionedUsers(authorId: String, userList: List[Map[String, Any]]): Seq[User] = {
-    val users= for (u <- userList) yield {
-      User(u.getOrElse("id", "").asInstanceOf[String], u.getOrElse("username", "").asInstanceOf[String])
-    }
-    users.filter(u => !authorId.equals(u.user_id))
+    val users = userList.flatMap(user => List(
+        User(
+          userId = user.getOrElse("id", "").asInstanceOf[String],
+          username = user.getOrElse("username", "").asInstanceOf[String])
+        )
+    )
+    users.filter(u => !authorId.equals(u.userId))
   }
 
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Seq[Url] = {
