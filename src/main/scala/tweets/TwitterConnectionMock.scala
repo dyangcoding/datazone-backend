@@ -1,48 +1,29 @@
 package tweets
 
-import utils.JSONParser
-
 import scala.io.BufferedSource
 
 class TwitterConnectionMock extends TwitterConnection{
-
   var tt:twitterThread= _
   var bufSource: BufferedSource = _
   val TWEET_DELAY_IN_MS= 100
-  class twitterThread extends Thread {
 
+  class twitterThread extends Thread {
     override def run() {
-      // Delay necessary to create
       Thread.sleep(2000)
       val bufReader= bufSource.bufferedReader
       while(running.get) {
-
-        // readln blocks until the next line could be read
         val line = bufReader.readLine
-        if (line==null) running.set(false)
+        if (line == null) running.set(false)
         else {
-          try {
-
-            val t: Option[Any] = JSONParser.parseJson(line)
-            val jsonMap = t.get.asInstanceOf[Map[String, Any]]
-            val tweet = jsonMap.get("tweet") match {
-              case Some(s: String) => s
-              case _ => ""
-            }
-
-            Thread.sleep(TWEET_DELAY_IN_MS)
-            synchronized {sendTweetToListeningClasses(tweet)}
-          } catch {
-            case e: Exception => println("****kein Create MockTweet möglich****" + line + "***")
-          }
+          Thread.sleep(TWEET_DELAY_IN_MS)
+          synchronized {sendTweetToListeningClasses(line)}
         }
       }
     }
   }
 
   override def initialize:Unit={
-
-    bufSource= scala.io.Source.fromFile("jcoll2.txt")
+    bufSource= scala.io.Source.fromFile("twitterResponseDemo.json")
     tt= new twitterThread
     tt.start
   }
@@ -54,11 +35,8 @@ class TwitterConnectionMock extends TwitterConnection{
 }
 
 object TwitterConnectionMock extends TwitterConnection {
-
   var twiCon:TwitterConnection= new TwitterConnectionMock
-
   def createTwitterConnection:TwitterConnection={
-
     twiCon
   }
 
