@@ -74,37 +74,75 @@ case class UpstreamRule(id: String, tag: String)
 
 // note: remove conversation ID for now
 case class Tweet(
-                  id:                                     String,                     // The unique identifier of the requested Tweet
-                  text:                                   String,                     // The actual UTF-8 text of the Tweet
-                  createdAt:                              String,                       // Creation time of the Tweet
-                  author_id:                              String,                     // The unique identifier of the User who posted this Tweet
-                  @Reader(contextSeqReader) context:      Seq[Context],               // Contains context annotations for the Tweet
-                  @Reader(entitiesSeqReader) entities:    Seq[Entities],              // Entities which have been parsed out of the text of the Tweet.
-                  matching_rules:                         Seq[Rule],                  // annotations about which filtered Rule this tweet was matched with
-                  source:                                 String,                     // The name of the app the user Tweeted from
-                  lang:                                   String)                     // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
-{}
+                  id:                                     String, // The unique identifier of the requested Tweet
+                  text:                                   String, // The actual UTF-8 text of the Tweet
+                  createdAt:                              String, // Creation time of the Tweet
+                  authorId:                               String, // The unique identifier of the User who posted this Tweet
+                  @Reader(contextSeqReader) context:      Seq[Context] =List(), // Contains context annotations for the Tweet, default empty list
+                  @Reader(entitiesSeqReader) entities:    Seq[Entities]=List(), // Entities which have been parsed out of the text of the Tweet, default empty list
+                  matchingRules:                          Seq[Rule] = List(), // annotations about which filtered Rule this tweet was matched with, default empty list
+                  //source:                                 String, // The name of the app the user Tweeted from
+                  lang:                                   String
+                )               // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
+{
+  def flatMap(transformer: tweets.Tweet => tweets.Tweet): tweets.Tweet = {
+    transformer(this)
+  }
+}
 
 case object Tweet {
+  // TODO: only utilise data and matching rule maps for now, more of includesMap later on
   def createTweet(json: String): Option[Tweet] = {
     JSONParser.parseJson(json) match {
       case Some(jsonMap: Map[String, Any]) => {
-        val dataMap: Map[String, Any] = jsonMap("data").asInstanceOf[Map[String, Any]]
-        val includesMap: Map[String, Any] = jsonMap("includes").asInstanceOf[Map[String, Any]]
-        val matchingRulesMap: List[Map[String, Any]] = jsonMap("matching_rules").asInstanceOf[List[Map[String, Any]]]
-
-        (dataMap.get("id"), dataMap.get("text"), dataMap.get("create_at"), dataMap.get("author_id"),
-          extractContext(dataMap.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]]),
-          extractEntities(dataMap.getOrElse("author_id", "").asInstanceOf[String], dataMap.getOrElse("entities", Map()).asInstanceOf[Map[String, Any]]),
-          extractRules(matchingRulesMap), dataMap.get("source"), dataMap.get("lang")) match
-        {
-          case (Some(id: String), Some(text: String), Some(createdAt: String), Some(authorId: String),
-            context: Seq[Context], entities: Seq[entities], matchingRules: Seq[Rule], Some(source: String), Some(lang: String)) =>
-            Some(Tweet(id, text, createdAt, authorId, context, entities, matchingRules, source, lang))
-          case _ => None
+        this.buildBasicTweet(jsonMap) match {
+          case Some(tweet) => {
+            val dataMap: Map[String, Any] = jsonMap("data").asInstanceOf[Map[String, Any]]
+            val tweetWithContext = tweet.flatMap(tweet => applyContext(tweet, dataMap))
+            //val includesMap: Map[String, Any] = jsonMap("includes").asInstanceOf[Map[String, Any]]
+            val tweetWithEntities = tweetWithContext.flatMap(tweet => applyEntities(tweet, dataMap))
+            Some(tweetWithEntities)
+          }
+          case None => None
         }
       }
       case _ => None
+    }
+  }
+
+  def buildBasicTweet(jsonMap: Map[String, Any]): Option[Tweet] = {
+    val dataMap: Map[String, Any] = jsonMap("data").asInstanceOf[Map[String, Any]]
+    (dataMap.get("id"), dataMap.get("text"), dataMap.get("created_at"), dataMap.get("author_id"), dataMap.get("lang")) match {
+      case (Some(id: String), Some(text: String), Some(createdAt: String), Some(authorId: String), Some(lang: String)) =>
+        Some(Tweet(id=id, text=text, createdAt=createdAt, authorId=authorId, lang=lang))
+      case _ => None
+    }
+  }
+
+  def applyContext(tweet: Tweet, dataMap: Map[String, Any]): Tweet = {
+    val context = extractContext(dataMap.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
+    context match {
+      case context: Seq[Context] => Tweet(id=tweet.id, text=tweet.text, createdAt=tweet.createdAt,
+        authorId=tweet.authorId, context=context, entities=tweet.entities, matchingRules=tweet.matchingRules, lang=tweet.lang)
+      case _ => tweet
+    }
+  }
+
+  def applyEntities(tweet: Tweet, dataMap: Map[String, Any]): Tweet = {
+    val entities = extractEntities(dataMap.getOrElse("author_id", "").asInstanceOf[String], dataMap.getOrElse("entities", Map()).asInstanceOf[Map[String, Any]])
+    entities match {
+      case entities: Seq[Entities] => Tweet(id=tweet.id, text=tweet.text, createdAt=tweet.createdAt,
+        authorId=tweet.authorId, context=tweet.context, entities=entities, matchingRules=tweet.matchingRules, lang=tweet.lang)
+      case _ => tweet
+    }
+  }
+
+  def applyMatchingRules(tweet: Tweet, jsonMap: Map[String, Any]): Tweet = {
+    val matchingRulesMap: List[Map[String, Any]] = jsonMap("matching_rules").asInstanceOf[List[Map[String, Any]]]
+    extractRules(matchingRulesMap) match {
+      case rules: Seq[Rule] => Tweet(id=tweet.id, text=tweet.text, createdAt=tweet.createdAt,
+        authorId=tweet.authorId, context=tweet.context, entities=tweet.entities, matchingRules=rules, lang=tweet.lang)
+      case _ => tweet
     }
   }
 
@@ -118,17 +156,17 @@ case object Tweet {
 
   def extractDomain(domain: Map[String, Any]): Domain = {
     Domain(
-      id = domain("id").asInstanceOf[String],
-      name = domain("name").asInstanceOf[String],
-      description = domain("description").asInstanceOf[String]
+      id = domain.getOrElse("id", "").asInstanceOf[String],
+      name = domain.getOrElse("name", "").asInstanceOf[String],
+      description = domain.getOrElse("description", "").asInstanceOf[String]
     )
   }
 
   def extractEntity(entity: Map[String, Any]): Entity = {
     Entity(
-      id = entity("id").asInstanceOf[String],
-      name = entity("name").asInstanceOf[String],
-      description = entity("description").asInstanceOf[String]
+      id = entity.getOrElse("id", "").asInstanceOf[String],
+      name = entity.getOrElse("name", "").asInstanceOf[String],
+      description = entity.getOrElse("description", "").asInstanceOf[String]
     )
   }
 
@@ -144,7 +182,7 @@ case object Tweet {
 
   def extractMentionedUsers(authorId: String, userList: List[Map[String, Any]]): Seq[User] = {
     val users= for (u <- userList) yield {
-      User(u("id").asInstanceOf[String], u("username").asInstanceOf[String])
+      User(u.getOrElse("id", "").asInstanceOf[String], u.getOrElse("username", "").asInstanceOf[String])
     }
     users.filter(u => !authorId.equals(u.user_id))
   }
@@ -152,17 +190,17 @@ case object Tweet {
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Seq[Url] = {
     urlList.flatMap(url => List(
         Url(
-          url = url("url").asInstanceOf[String],
-          expandedUrl = url("expanded_url").asInstanceOf[String],
-          displayUrl = url("display_url").asInstanceOf[String],
+          url = url.getOrElse("url", "").asInstanceOf[String],
+          expandedUrl = url.getOrElse("expanded_url", "").asInstanceOf[String],
+          displayUrl = url.getOrElse("display_url", "").asInstanceOf[String],
         )
       )
     )
   }
 
   def extractHashtags(tagList:List[Map[String,Any]]):List[String]={
-    tagList.flatMap(el => {
-      val t = el.getOrElse("tag", ""); if (t == "") List() else List(t)
+    tagList.flatMap(tag => {
+      val t = tag.getOrElse("tag", ""); if (t == "") List() else List(t)
     }).asInstanceOf[List[String]]
   }
 
@@ -174,11 +212,11 @@ case object Tweet {
     }).asInstanceOf[Seq[Rule]]
   }
 
-  implicit val context:      BSONDocumentHandler[Context] = Macros.handler[Context]
-  implicit val entity : BSONDocumentHandler[Entity] = Macros.handler[Entity]
-  implicit val domain:       BSONDocumentHandler[Domain] = Macros.handler[Domain]
-  implicit val mentionedUsers: BSONDocumentHandler[User] = Macros.handler[User]
-  implicit val mentionedUrls: BSONDocumentHandler[Url] = Macros.handler[Url]
-  implicit val entities:     BSONDocumentHandler[Entities]= Macros.handler[Entities]
-  implicit val TweetHandler: BSONDocumentHandler[Tweet]   = Macros.handler[Tweet]
+  implicit val context:        BSONDocumentHandler[Context]  = Macros.handler[Context]
+  implicit val entity :        BSONDocumentHandler[Entity]   = Macros.handler[Entity]
+  implicit val domain:         BSONDocumentHandler[Domain]   = Macros.handler[Domain]
+  implicit val mentionedUsers: BSONDocumentHandler[User]     = Macros.handler[User]
+  implicit val mentionedUrls:  BSONDocumentHandler[Url]      = Macros.handler[Url]
+  implicit val entities:       BSONDocumentHandler[Entities] = Macros.handler[Entities]
+  implicit val TweetHandler:   BSONDocumentHandler[Tweet]    = Macros.handler[Tweet]
 }
