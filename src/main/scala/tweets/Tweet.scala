@@ -70,19 +70,27 @@ case object Entities {
   val entitiesSeqWriter: BSONWriter[Seq[Entities]] = BSONWriter.sequence[Entities](entitiesHandler writeTry)
 }
 
-case class UpstreamRule(id: String, tag: String)
+/*
+ A help class to avoid abuse the class "Rule" which in this case will only contains id and text,
+ the other 18 attributes are unset.
+ */
+case class MatchingRule(id: String, tag: String)
+
+case object MatchingRule {
+  implicit val matchingRuleHandler: BSONHandler[MatchingRule] = Macros.handler[MatchingRule]
+}
 
 // note: remove conversation ID for now
 case class Tweet(
-                  id:                                     String,               // The unique identifier of the requested Tweet
-                  text:                                   String,               // The actual UTF-8 text of the Tweet
-                  createdAt:                              String,               // Creation time of the Tweet
-                  authorId:                               String,               // The unique identifier of the User who posted this Tweet
-                  @Reader(contextSeqReader) context:      Seq[Context] =List(), // Contains context annotations for the Tweet, default empty list
-                  @Reader(entitiesSeqReader) entities:    Seq[Entities]=List(), // Entities which have been parsed out of the text of the Tweet, default empty list
-                  matchingRules:                          Seq[Rule] = List(),   // annotations about which filtered Rule this tweet was matched with, default empty list
-                  //source:                                 String,             // The name of the app the user Tweeted from
-                  lang:                                   String                // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
+                  id:                                     String,                   // The unique identifier of the requested Tweet
+                  text:                                   String,                   // The actual UTF-8 text of the Tweet
+                  createdAt:                              String,                   // Creation time of the Tweet
+                  authorId:                               String,                   // The unique identifier of the User who posted this Tweet
+                  @Reader(contextSeqReader) context:      Seq[Context]     =List(), // Contains context annotations for the Tweet, default empty list
+                  @Reader(entitiesSeqReader) entities:    Seq[Entities]    =List(), // Entities which have been parsed out of the text of the Tweet, default empty list
+                  matchingRules:                          Seq[MatchingRule]=List(), // annotations about which filtered Rule this tweet was matched with, default empty list
+                  //source:                                 String,                 // The name of the app the user Tweeted from
+                  lang:                                   String                    // Language of the Tweet, if detected by Twitter. Returned as a BCP47 language tag
                 )
 {
   def flatMap(transformer: tweets.Tweet => tweets.Tweet): tweets.Tweet = {
@@ -139,7 +147,7 @@ case object Tweet {
   def applyMatchingRules(tweet: Tweet, jsonMap: Map[String, Any]): Tweet = {
     val matchingRulesMap: List[Map[String, Any]] = jsonMap("matching_rules").asInstanceOf[List[Map[String, Any]]]
     extractRules(matchingRulesMap) match {
-      case rules: Seq[Rule] => Tweet(id=tweet.id, text=tweet.text, createdAt=tweet.createdAt,
+      case rules: Seq[MatchingRule] => Tweet(id=tweet.id, text=tweet.text, createdAt=tweet.createdAt,
         authorId=tweet.authorId, context=tweet.context, entities=tweet.entities, matchingRules=rules, lang=tweet.lang)
       case _ => tweet
     }
@@ -206,12 +214,12 @@ case object Tweet {
     }).asInstanceOf[List[String]]
   }
 
-  def extractRules(ruleList: List[Map[String, Any]]): Seq[Rule] = {
+  def extractRules(ruleList: List[Map[String, Any]]): Seq[MatchingRule] = {
     ruleList.flatMap(rule => {
       val id = rule.getOrElse("id", "").toString
       val tag = rule.getOrElse("tag", "").asInstanceOf[String]
-      if (id != "" && tag != "") List(Rule(twitterGenId = Some(id), tags = Some(tag))) else List()
-    }).asInstanceOf[Seq[Rule]]
+      if (id != "" && tag != "") List(MatchingRule(id, tag)) else List()
+    }).asInstanceOf[Seq[MatchingRule]]
   }
 
   implicit val context:        BSONDocumentHandler[Context]  = Macros.handler[Context]
