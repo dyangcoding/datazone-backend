@@ -7,7 +7,8 @@ import utils.JSONParser
 
 import scala.util.{Failure, Success}
 
-case class Rule(_id:             Option[BSONObjectID]=None,      // require internal for mongo
+case class Rule(_id:             Option[BSONObjectID]=None, // require internal for mongo
+                twitterGenId:    Option[String]      =None, // will be generated once it is verified by the Twitter API and could be utilised to deduplicate objects within DB
                 keyword:         Option[String]      =None, // matches a keyword within the body of a Tweet
                 emoji:           Option[String]      =None,
                 mentionedUserId: Option[String]      =None, // including the @ character
@@ -20,10 +21,11 @@ case class Rule(_id:             Option[BSONObjectID]=None,      // require inte
                 context:         Option[String]      =None, // matches Tweets with a specific domain id and/or domain id
                 entity:          Option[String]      =None, // matches Tweets with a specific entity string value
                 conversationId:  Option[String]      =None, // matches Tweets that share a common conversation ID
+                tags:            Option[String]      =None, // could be utilised for sorting rule, for now just a simple string
                 options:         Option[RuleOptions] =None
 ){
   // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
-  require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
+  // require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
 
   // Rule data validation
   require(keyword.isEmpty || (keyword.forall(_.nonEmpty) && keyword.forall(text => text.length <= 256)),
@@ -196,5 +198,5 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   }
 
   implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions.apply)
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat14(Rule.apply)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat16(Rule.apply)
 }

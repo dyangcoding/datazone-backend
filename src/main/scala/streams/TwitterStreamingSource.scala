@@ -1,9 +1,9 @@
 package streams
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.{ScalaReflection}
+import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.sources.DataSourceRegister
-import org.apache.spark.sql.sources.v2.reader.streaming.{MicroBatchReader}
+import org.apache.spark.sql.sources.v2.reader.streaming.MicroBatchReader
 import org.apache.spark.sql.sources.v2.{DataSourceOptions, DataSourceV2, MicroBatchReadSupport}
 import org.apache.spark.sql.types._
 import tweets.Tweet
