@@ -1,8 +1,7 @@
 package streams
 
-import org.apache.spark.sql.functions.{current_timestamp, from_json, from_unixtime, unix_timestamp, window}
-import org.apache.spark.sql.streaming.{OutputMode, StreamingQuery, Trigger}
-import org.apache.spark.sql.{DataFrame, Dataset, Encoders, ForeachWriter, SparkSession}
+import org.apache.spark.sql.streaming.StreamingQuery
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import tweets.TwitterConnectionImpl
 
 object TwitterSource {
@@ -20,11 +19,6 @@ object TwitterSource {
       .master("local[*]")
       .getOrCreate()
 
-    import spark.implicits._
-    val bearerToken= sys.env.getOrElse("TWITTER_BEARER","")
-
-    println("BEARER " + bearerToken)
-
     val tweetDF: DataFrame = spark
       .readStream
       .format(providerClassName)
@@ -33,22 +27,10 @@ object TwitterSource {
 
     tweetDF.printSchema
 
-    val windowedCounts = tweetDF
-      .withColumn("timestamp",current_timestamp())
-      .groupBy(window($"timestamp", "1 minutes"), $"party")
-      .count()
-
-    val x= windowedCounts.writeStream
-      .trigger(Trigger.ProcessingTime("30 seconds"))
-      .outputMode("update")
-      .format("console")
-      .start()
-
-/*
     val x: StreamingQuery =tweetDF.writeStream.foreach(new MongoForEachWriter)
       .outputMode("append")
       .start()
-*/
+
     while(true){}
 
     println("*******************************************************************************************")
@@ -57,6 +39,5 @@ object TwitterSource {
     x.stop
     TwitterConnectionImpl.stop
     spark.stop
-
   }
 }
