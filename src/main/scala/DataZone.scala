@@ -32,7 +32,7 @@ object DataZone {
         lazy val routes: Route = {
           cors() {
             concat(
-              pathPrefix("rule")(ruleRoutes.routes),
+              pathPrefix("rules")(ruleRoutes.routes),
               pathPrefix("tweets")(tweetRoutes.routes)
             )
           }
