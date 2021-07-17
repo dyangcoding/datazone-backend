@@ -2,7 +2,11 @@ import akka.actor.typed.{ActorSystem, Behavior, PostStop}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.Directives._
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import rules.{RuleRepository, RuleRoutes}
+import tweets.{TweetRepository, TweetRoutes}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
@@ -20,10 +24,21 @@ object DataZone {
         implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
         val buildRuleRepository = context.spawn(RuleRepository(), "RuleRepository")
-        val routes = new RuleRoutes(buildRuleRepository)
+        val ruleRoutes = new RuleRoutes(buildRuleRepository)
 
-        val serverBinding: Future[Http.ServerBinding] =
-          Http().newServerAt(host, port).bind(routes.ruleRoutes)
+        val tweetRepository = context.spawn(TweetRepository(), "TweetRepository")
+        val tweetRoutes = new TweetRoutes(tweetRepository)
+
+        lazy val routes: Route = {
+          cors() {
+            concat(
+              pathPrefix("rule")(ruleRoutes.routes),
+              pathPrefix("tweets")(tweetRoutes.routes)
+            )
+          }
+        }
+
+        val serverBinding: Future[Http.ServerBinding] = Http().newServerAt(host, port).bind(routes)
 
         context.pipeToSelf(serverBinding) {
           case Success(binding) =>
