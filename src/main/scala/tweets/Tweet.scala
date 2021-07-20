@@ -5,7 +5,6 @@ import reactivemongo.api.bson._
 import reactivemongo.api.bson.{BSONReader, BSONWriter, Macros}
 import utils.JSONParser
 
-import scala.collection.mutable
 import scala.language.postfixOps
 
 case class Domain(id: String, name: String, description: String)
@@ -146,14 +145,15 @@ case object Tweet {
     JSONParser.parseJson(json) match {
       case Some(jsonMap: Map[String, Any]) =>
         val dataMap: Map[String, Any] = jsonMap.getOrElse("data", Map()).asInstanceOf[Map[String, Any]]
-        val ruleMap: List[Map[String, Any]] = jsonMap.getOrElse("matching_rule", List).asInstanceOf[List[Map[String, Any]]]
+        val basicTweet = this.buildBasicTweet(dataMap)
+        val ruleMap: List[Map[String, Any]] = jsonMap.getOrElse("matching_rule", List()).asInstanceOf[List[Map[String, Any]]]
         if (dataMap.nonEmpty) {
-          val basicTweet = this.buildBasicTweet(dataMap)
           val withDataProperties = this.applyDataProperties(basicTweet, dataMap)
           val withUsers = this.applyUsers(withDataProperties, jsonMap)
           this.applyMatchingRules(withUsers, ruleMap)
+        } else {
+          basicTweet
         }
-        None
       case _ => None
     }
   }
@@ -181,7 +181,10 @@ case object Tweet {
   }
 
   def applyUsers(tweet: Option[Tweet], jsonMap: Map[String, Any]): Option[Tweet] = {
-    ???
+    val includesMap: Map[String, Any] = jsonMap.getOrElse("includes", Map()).asInstanceOf[Map[String, Any]]
+    tweet
+      .flatMap(tweet => applyAuthor(tweet, jsonMap))
+      .flatMap(tweet => applyMentionedUsers(tweet, includesMap))
   }
 
   // if creation date is not presents, return the given tweet object wrapped with optional
@@ -256,8 +259,8 @@ case object Tweet {
   }
 
   def applyMetrics(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
-    val publicMetrics = dataMap.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]
-    val nonPublicMetrics = dataMap.getOrElse("non_public_metrics", Map()).asInstanceOf[Map[String, Any]]
+    val publicMetrics: Map[String, Any] = dataMap.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]
+    val nonPublicMetrics: Map[String, Any] = dataMap.getOrElse("non_public_metrics", Map()).asInstanceOf[Map[String, Any]]
 
     val withPublicMetrics = if (publicMetrics.nonEmpty) {
       applyPublicMetrics(tweet, publicMetrics)
@@ -328,7 +331,7 @@ case object Tweet {
   }
 
   def applyContext(tweet: Tweet, data: Map[String, Any]): Option[Tweet] = {
-    val context = extractContext(data.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
+    val context: Option[Seq[Context]] = extractContext(data.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
     context match {
       case Some(_: Seq[Context]) =>
         Some(Tweet(
@@ -375,11 +378,48 @@ case object Tweet {
     }
   }
 
-  def applyMentionedUsers(tweet: Tweet, includesMap: Map[String, Any]): Tweet = {
+  def applyAuthor(tweet: Tweet, jsonMap: Map[String, Any]): Option[Tweet] = {
+    val dataMap: Map[String, Any] = jsonMap.getOrElse("data", Map()).asInstanceOf[Map[String, Any]]
+    val userMap: List[Map[String, Any]] = jsonMap
+      .getOrElse("includes", Map()).asInstanceOf[Map[String, Any]]
+      .getOrElse("users", List()).asInstanceOf[List[Map[String, Any]]]
+    dataMap.get("author_id") match {
+      case Some(authorId: String) =>
+        val author = extractAuthor(authorId, userMap)
+        Some(Tweet(
+          id = tweet.id,
+          text = tweet.text,
+          createdAt = tweet.createdAt,
+          author = author,
+          inReplyToUserId = tweet.inReplyToUserId,
+          publicMetrics = tweet.publicMetrics,
+          nonPublicMetrics = tweet.nonPublicMetrics,
+          context = tweet.context,
+          entities = tweet.entities,
+          mentionedUsers = tweet.mentionedUsers,
+          matchingRules = tweet.matchingRules,
+          source = tweet.source,
+          conversationId = tweet.conversationId,
+          lang = tweet.lang
+        ))
+      case _ => Some(tweet)
+    }
+  }
+
+  def extractAuthor(authorId: String, userMap: List[Map[String, Any]]): Option[User] = {
+    val users: Option[Seq[User]] = extractUsers(userMap)
+    users match {
+      case Some(users: Seq[User]) =>
+        Some(users.filter(u => authorId.equals(u.id)).head)
+      case _ => None
+    }
+  }
+
+  def applyMentionedUsers(tweet: Tweet, includesMap: Map[String, Any]): Option[Tweet] = {
     val userMap: List[Map[String, Any]] = includesMap.getOrElse("users", List()).asInstanceOf[List[Map[String, Any]]]
     if (userMap.nonEmpty) {
-      val mentionedUsers = extractMentionedUsers(tweet.author.get.id, extractUsers(userMap))
-      Tweet(
+      val mentionedUsers = extractMentionedUsers(tweet.author, extractUsers(userMap))
+      Some(Tweet(
         id=tweet.id,
         text=tweet.text,
         createdAt=tweet.createdAt,
@@ -394,9 +434,10 @@ case object Tweet {
         conversationId=tweet.conversationId,
         source=tweet.source,
         lang=tweet.lang
-      )
+      ))
+    } else {
+      Some(tweet)
     }
-    tweet
   }
 
   def applyMatchingRules(tweet: Option[Tweet], ruleMap: List[Map[String, Any]]): Option[Tweet] = {
@@ -433,8 +474,9 @@ case object Tweet {
         val entity = extractEntity(context("entity").asInstanceOf[Map[String, Any]])
         List(Context(domain = domain, entity = entity))
       }))
+    } else {
+      None
     }
-    None
   }
 
   def extractDomain(domain: Map[String, Any]): Domain = {
@@ -459,26 +501,33 @@ case object Tweet {
       val urls = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
       val hashtags = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
       Some(List(Entities(mentionedUrls = urls, hashtags = hashtags)))
+    } else {
+      None
     }
-    None
   }
 
   // extract all users within "includes" data map, contains both author and mentioned users
-  def extractUsers(userMap: List[Map[String, Any]]): Seq[User] = {
-    userMap.flatMap(user => List(
-      User(
-        id = user.getOrElse("id", "").asInstanceOf[String],
-        name = user.getOrElse("name", "").asInstanceOf[String],
-        username = user.getOrElse("username", "").asInstanceOf[String],
-        createdAt = user.getOrElse("created_at", "").asInstanceOf[String],
-        description = user.get("description").asInstanceOf[Option[String]],
-        location = user.get("location").asInstanceOf[Option[String]],
-        profileImageUrl = user.get("profile_image_url").asInstanceOf[Option[String]],
-        metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
-        url = user.get("url").asInstanceOf[Option[String]],
-        verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
+  def extractUsers(userMap: List[Map[String, Any]]): Option[Seq[User]] = {
+    if (userMap.nonEmpty) {
+      Some(
+        userMap.flatMap(user => List(
+          User(
+            id = user.getOrElse("id", "").asInstanceOf[String],
+            name = user.getOrElse("name", "").asInstanceOf[String],
+            username = user.getOrElse("username", "").asInstanceOf[String],
+            createdAt = user.getOrElse("created_at", "").asInstanceOf[String],
+            description = user.get("description").asInstanceOf[Option[String]],
+            location = user.get("location").asInstanceOf[Option[String]],
+            profileImageUrl = user.get("profile_image_url").asInstanceOf[Option[String]],
+            metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
+            url = user.get("url").asInstanceOf[Option[String]],
+            verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
+          )
+        )
       )
-    )
+    } else {
+      None
+    }
   }
 
   def extractUserMetrics(metrics: Map[String, Any]): Option[UserMetrics] = {
@@ -491,22 +540,20 @@ case object Tweet {
           listedCount = metrics.getOrElse("listed_count", 0).asInstanceOf[Int]
         )
       )
+    } else {
+      None
     }
-    None
   }
 
-  // should also consider that both data and includes map are not presents
-  def extractAuthor(jsonMap: Map[String, Any]): User = {
-    val dataMap: Map[String, Any] = jsonMap("data").asInstanceOf[Map[String, Any]]
-    val includesMap: Map[String, Any] = jsonMap.getOrElse("includes", Map()).asInstanceOf[Map[String, Any]]
-    val userMap: List[Map[String, Any]] = includesMap.getOrElse("users", List()).asInstanceOf[List[Map[String, Any]]]
-    val authorId = dataMap.getOrElse("author_id", "")
-    val users = extractUsers(userMap)
-    users.filter(u => authorId.equals(u.id)).head
-  }
-
-  def extractMentionedUsers(authorId: String, users: Seq[User]): Option[Seq[User]] = {
-    Some(users.filter(u => !authorId.equals(u.id)))
+  // filter out the author, if it is presents, return the given users otherwise
+  def extractMentionedUsers(author: Option[User]=None, users: Option[Seq[User]]): Option[Seq[User]] = {
+    (author, users) match {
+      case (Some(author: User), Some(users: Seq[User])) =>
+        Some(users.filter(user => !author.id.equals(user.id)))
+      case (None, Some(users: Seq[User])) =>
+        Some(users)
+      case (_, _) => users
+    }
   }
 
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Seq[Url]] = {
@@ -521,8 +568,9 @@ case object Tweet {
           )
         )
       )
+    } else {
+      None
     }
-    None
   }
 
   def extractHashtags(hashtags: List[Map[String,Any]]): Option[Seq[String]] ={
@@ -532,8 +580,9 @@ case object Tweet {
           val t = tag.getOrElse("tag", "").asInstanceOf[String]; if (t == "") List() else List(t)
         })
       )
+    } else {
+      None
     }
-    None
   }
 
   def extractRules(ruleList: List[Map[String, Any]]): Option[Seq[MatchingRule]] = {
@@ -545,8 +594,9 @@ case object Tweet {
           if (id != "" && tag != "") List(MatchingRule(id, tag)) else List()
         })
       )
+    } else {
+      None
     }
-    None
   }
 
   def createTweetFromRow(row: Row): Tweet = {
