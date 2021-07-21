@@ -141,24 +141,39 @@ case class Tweet(
 }
 
 case object Tweet {
+  /*
+    build a Tweet Object form the JSON Object contains data, includes, matching_rules as object
+    {
+      "data": {},
+      "includes": {},
+      "matching_rules": {}
+    }
+   */
   def createTweet(json: String): Option[Tweet] = {
     JSONParser.parseJson(json) match {
       case Some(jsonMap: Map[String, Any]) =>
         val dataMap: Map[String, Any] = jsonMap.getOrElse("data", Map()).asInstanceOf[Map[String, Any]]
         val basicTweet = this.buildBasicTweet(dataMap)
-        val ruleMap: List[Map[String, Any]] = jsonMap.getOrElse("matching_rule", List()).asInstanceOf[List[Map[String, Any]]]
-        if (dataMap.nonEmpty) {
-          val withDataProperties = this.applyDataProperties(basicTweet, dataMap)
-          val withUsers = this.applyUsers(withDataProperties, jsonMap)
-          this.applyMatchingRules(withUsers, ruleMap)
+        val withDataProperties = if (dataMap.nonEmpty) {
+          this.applyDataProperties(basicTweet, dataMap)
         } else {
           basicTweet
+        }
+        val withUsers = this.applyUsers(withDataProperties, jsonMap)
+        val ruleMap: List[Map[String, Any]] = jsonMap.getOrElse("matching_rules", List()).asInstanceOf[List[Map[String, Any]]]
+        if (ruleMap.nonEmpty) {
+          this.applyMatchingRules(withUsers, ruleMap)
+        } else {
+          withUsers
         }
       case _ => None
     }
   }
 
-  // if id and text would ever be empty, returns None
+  /*
+    build a basic Tweet object using attributes obtained within the data object
+    attributes: id, text, createdAt, InReplyToUserId, ConversationId, Source, lang
+   */
   def buildBasicTweet(dataMap: Map[String, Any]): Option[Tweet] = {
     val tweet = (dataMap.get("id"), dataMap.get("text")) match {
       case (Some(id: String), Some(text: String)) =>
@@ -173,6 +188,10 @@ case object Tweet {
       .flatMap(tweet => applyLanguage(tweet, dataMap))
   }
 
+  /*
+    apply non basic attributes to the basic Tweet object which include metrics, context, entities
+    within the data object
+   */
   def applyDataProperties(tweet: Option[Tweet], dataMap: Map[String, Any]): Option[Tweet] = {
     tweet
       .flatMap(tweet => applyMetrics(tweet, dataMap))
@@ -180,6 +199,10 @@ case object Tweet {
       .flatMap(tweet => applyEntities(tweet, dataMap))
   }
 
+  /*
+    extract author as a User object, and mentionedUsers as a list of users
+    the author, if presents, would be extracted from the mentioned user list
+   */
   def applyUsers(tweet: Option[Tweet], jsonMap: Map[String, Any]): Option[Tweet] = {
     val includesMap: Map[String, Any] = jsonMap.getOrElse("includes", Map()).asInstanceOf[Map[String, Any]]
     tweet
@@ -258,16 +281,17 @@ case object Tweet {
     }
   }
 
+  /*
+    apply both public and non public metrics for the tweet if presents
+   */
   def applyMetrics(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     val publicMetrics: Map[String, Any] = dataMap.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]
     val nonPublicMetrics: Map[String, Any] = dataMap.getOrElse("non_public_metrics", Map()).asInstanceOf[Map[String, Any]]
-
     val withPublicMetrics = if (publicMetrics.nonEmpty) {
       applyPublicMetrics(tweet, publicMetrics)
     } else {
       Some(tweet)
     }
-
     if (nonPublicMetrics.nonEmpty) {
       applyNonPublicMetrics(tweet, nonPublicMetrics)
     } else {
@@ -441,28 +465,23 @@ case object Tweet {
   }
 
   def applyMatchingRules(tweet: Option[Tweet], ruleMap: List[Map[String, Any]]): Option[Tweet] = {
-    if (ruleMap.isEmpty) {
-      tweet
-    }
-    else {
-      extractRules(ruleMap) match {
-        case Some(rules: Seq[MatchingRule]) =>
-          Some(Tweet(
-            id=tweet.get.id,
-            text=tweet.get.text,
-            createdAt=tweet.get.createdAt,
-            author=tweet.get.author,
-            inReplyToUserId=tweet.get.inReplyToUserId,
-            publicMetrics=tweet.get.publicMetrics,
-            nonPublicMetrics=tweet.get.nonPublicMetrics,
-            context=tweet.get.context,
-            entities=tweet.get.entities,
-            matchingRules=Some(rules),
-            conversationId=tweet.get.conversationId,
-            source=tweet.get.source,
-            lang=tweet.get.lang))
-        case _ => tweet
-      }
+    extractRules(ruleMap) match {
+      case Some(rules: Seq[MatchingRule]) =>
+        Some(Tweet(
+          id=tweet.get.id,
+          text=tweet.get.text,
+          createdAt=tweet.get.createdAt,
+          author=tweet.get.author,
+          inReplyToUserId=tweet.get.inReplyToUserId,
+          publicMetrics=tweet.get.publicMetrics,
+          nonPublicMetrics=tweet.get.nonPublicMetrics,
+          context=tweet.get.context,
+          entities=tweet.get.entities,
+          matchingRules=Some(rules),
+          conversationId=tweet.get.conversationId,
+          source=tweet.get.source,
+          lang=tweet.get.lang))
+      case _ => tweet
     }
   }
 
@@ -626,11 +645,11 @@ case object Tweet {
           name = value.getString(1),
           username = value.getString(2),
           createdAt = value.getString(3),
-          description = value.get(4).asInstanceOf[Option[String]],
-          location = value.get(5).asInstanceOf[Option[String]],
-          profileImageUrl = value.get(6).asInstanceOf[Option[String]],
-          metrics = createUserMetrics(value.get(7).asInstanceOf[Option[Row]]),
-          url = value.get(8).asInstanceOf[Option[String]],
+          description = Some(value.get(4).asInstanceOf[String]),
+          location = Some(value.get(5).asInstanceOf[String]),
+          profileImageUrl = Some(value.get(6).asInstanceOf[String]),
+          metrics = createUserMetrics(Some(value.get(7).asInstanceOf[Row])),
+          url = Some(value.get(8).asInstanceOf[String]),
           verified =value.getBoolean(9)
         ))
       case _ => None
@@ -662,6 +681,7 @@ case object Tweet {
     }
   }
 
+  // TODO deduplicate context
   def createContext(rows: Option[Seq[Row]]): Option[Seq[Context]] = {
     rows match {
       case Some(values: Seq[Row]) =>
@@ -677,6 +697,7 @@ case object Tweet {
     }
   }
 
+  // TODO deduplicate entities
   def createEntities(rows: Option[Seq[Row]]): Option[Seq[Entities]] =
   {
     rows match {
