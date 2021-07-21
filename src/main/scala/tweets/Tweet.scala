@@ -510,17 +510,17 @@ case object Tweet {
 
   def extractDomain(domain: Map[String, Any]): Domain = {
     Domain(
-      id = domain.getOrElse("id", "").asInstanceOf[String],
-      name = domain.getOrElse("name", "").asInstanceOf[String],
-      description = domain.getOrElse("description", "").asInstanceOf[String]
+      id = domain.getOrElse("id", "").toString,
+      name = domain.getOrElse("name", "").toString,
+      description = domain.getOrElse("description", "").toString
     )
   }
 
   def extractEntity(entity: Map[String, Any]): Entity = {
     Entity(
-      id = entity.getOrElse("id", "").asInstanceOf[String],
-      name = entity.getOrElse("name", "").asInstanceOf[String],
-      description = entity.getOrElse("description", "").asInstanceOf[String]
+      id = entity.getOrElse("id", "").toString,
+      name = entity.getOrElse("name", "").toString,
+      description = entity.getOrElse("description", "").toString
     )
   }
 
@@ -529,8 +529,8 @@ case object Tweet {
     if (entities.isEmpty) {
       None
     } else {
-      val urls = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
-      val hashtags = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
+      val urls: Option[Seq[Url]] = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
+      val hashtags: Option[Seq[String]] = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
       // entities object could contain mentions (users), hashtags, urls, cashtags ans other attributes
       // even if entities object is not empty, urls and hashtags could still be empty
       if (urls.isEmpty && hashtags.isEmpty) {
@@ -547,22 +547,23 @@ case object Tweet {
       None
     } else {
       Some(
-        userMap.distinct.flatMap(user => List(
-          User(
-            id = user.getOrElse("id", "").asInstanceOf[String],
-            name = user.getOrElse("name", "").asInstanceOf[String],
-            username = user.getOrElse("username", "").asInstanceOf[String],
-            createdAt = user.getOrElse("created_at", "").asInstanceOf[String],
-            description = user.get("description").asInstanceOf[Option[String]],
-            location = user.get("location").asInstanceOf[Option[String]],
-            profileImageUrl = user.get("profile_image_url").asInstanceOf[Option[String]],
-            metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
-            url = user.get("url").asInstanceOf[Option[String]],
-            verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
+        userMap.distinct.flatMap(user =>
+          List(
+            User(
+              id = user.getOrElse("id", "").toString,
+              name = user.getOrElse("name", "").toString,
+              username = user.getOrElse("username", "").toString,
+              createdAt = user.getOrElse("created_at", "").toString,
+              description = user.get("description").asInstanceOf[Option[String]],
+              location = user.get("location").asInstanceOf[Option[String]],
+              profileImageUrl = user.get("profile_image_url").asInstanceOf[Option[String]],
+              metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
+              url = user.get("url").asInstanceOf[Option[String]],
+              verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
+            )
+          )
         )
-        )
-      )
-    }
+      }
   }
 
   def extractUserMetrics(metrics: Map[String, Any]): Option[UserMetrics] = {
@@ -596,13 +597,14 @@ case object Tweet {
       None
     } else {
       Some(
-        urlList.distinct.flatMap(url => List(
-          Url(
-            url = url.getOrElse("url", "").asInstanceOf[String],
-            expandedUrl = url.getOrElse("expanded_url", "").asInstanceOf[String],
-            displayUrl = url.getOrElse("display_url", "").asInstanceOf[String],
+        urlList.distinct.flatMap(url =>
+          List(
+            Url(
+              url = url.getOrElse("url", "").toString,
+              expandedUrl = url.getOrElse("expanded_url", "").toString,
+              displayUrl = url.getOrElse("display_url", "").toString,
+            )
           )
-        )
         )
       )
     }
@@ -614,7 +616,7 @@ case object Tweet {
     } else {
       Some(
         hashtags.distinct.flatMap(tag => {
-          val t = tag.getOrElse("tag", "").asInstanceOf[String]; if (t == "") List() else List(t)
+          val t: String = tag.getOrElse("tag", "").toString; if (t == "") List() else List(t)
         })
       )
     }
@@ -626,8 +628,8 @@ case object Tweet {
     } else {
       Some(
         ruleList.distinct.flatMap(rule => {
-          val id = rule.getOrElse("id", "").toString
-          val tag = rule.getOrElse("tag", "").asInstanceOf[String]
+          val id: String = rule.getOrElse("id", "").toString
+          val tag: String = rule.getOrElse("tag", "").toString
           if (id != "" && tag != "") List(MatchingRule(id, tag)) else List()
         })
       )
@@ -697,7 +699,6 @@ case object Tweet {
     }
   }
 
-  // TODO deduplicate context
   def createContext(rows: Option[Row]): Option[Context] = {
     rows match {
       case Some(value: Row) =>
@@ -712,7 +713,6 @@ case object Tweet {
     }
   }
 
-  // TODO deduplicate entities
   def createEntities(rows: Option[Row]): Option[Entities] =
   {
     rows match {
@@ -727,7 +727,7 @@ case object Tweet {
           case _ => None
         }
         if (hashtags.nonEmpty && urls.nonEmpty) {
-          Some(Entities(hashtags = hashtags, mentionedUrls = urls))
+          Some(Entities(hashtags = Some(hashtags.get.distinct), mentionedUrls = Some(urls.get.distinct)))
         } else {
           None
         }
