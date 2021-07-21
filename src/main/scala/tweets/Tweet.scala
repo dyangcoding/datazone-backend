@@ -519,7 +519,13 @@ case object Tweet {
     if (entities.nonEmpty) {
       val urls = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
       val hashtags = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
-      Some(List(Entities(mentionedUrls = urls, hashtags = hashtags)))
+      // entities object could contain mentions (users), hashtags, urls, cashtags ans other attributes
+      // even if entities object is not empty, urls and hashtags could still be empty
+      if (urls.isEmpty && hashtags.isEmpty) {
+        None
+      } else {
+        Some(List(Entities(mentionedUrls = urls, hashtags = hashtags)))
+      }
     } else {
       None
     }
