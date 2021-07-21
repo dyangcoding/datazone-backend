@@ -303,15 +303,32 @@ class CreateTweetsTest extends AnyFunSuite{
     """
       |{
       |  "data": {
-      |    "attachments": {
-      |      "media_keys": [
-      |        "3_1414522386758651907",
-      |        "3_1414522391737348096",
-      |        "3_1414522397009534976"
-      |      ]
-      |    },
-      |    "author_id": "1176621624948404224",
+      |    "author_id": "1303226063745503233",
       |    "context_annotations": [
+      |      {
+      |        "domain": {
+      |          "id": "65",
+      |          "name": "Interests and Hobbies Vertical",
+      |          "description": "Top level interests and hobbies groupings, like Food or Travel"
+      |        },
+      |        "entity": {
+      |          "id": "847868745150119936",
+      |          "name": "Home & family",
+      |          "description": "Hobbies and interests"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "65",
+      |          "name": "Interests and Hobbies Vertical",
+      |          "description": "Top level interests and hobbies groupings, like Food or Travel"
+      |        },
+      |        "entity": {
+      |          "id": "852262932607926273",
+      |          "name": "Pets",
+      |          "description": "Pets"
+      |        }
+      |      },
       |      {
       |        "domain": {
       |          "id": "66",
@@ -319,9 +336,33 @@ class CreateTweetsTest extends AnyFunSuite{
       |          "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
       |        },
       |        "entity": {
-      |          "id": "847888632711061504",
-      |          "name": "Personal finance",
-      |          "description": "Personal finance"
+      |          "id": "852263859209478144",
+      |          "name": "Cats",
+      |          "description": "Cats"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "66",
+      |          "name": "Interests and Hobbies Category",
+      |          "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+      |        },
+      |        "entity": {
+      |          "id": "1046577790353428480",
+      |          "name": "Visual arts",
+      |          "description": "Visual Arts"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "65",
+      |          "name": "Interests and Hobbies Vertical",
+      |          "description": "Top level interests and hobbies groupings, like Food or Travel"
+      |        },
+      |        "entity": {
+      |          "id": "847868745150119936",
+      |          "name": "Home & family",
+      |          "description": "Hobbies and interests"
       |        }
       |      },
       |      {
@@ -331,108 +372,120 @@ class CreateTweetsTest extends AnyFunSuite{
       |          "description": "Interests, opinions, and behaviors of individuals, groups, or cultures; like Speciality Cooking or Theme Parks"
       |        },
       |        "entity": {
-      |          "id": "847894852779900928",
-      |          "name": "Stocks & indices",
-      |          "description": "Stocks"
+      |          "id": "847869251595542528",
+      |          "name": "Drawing & illustration",
+      |          "description": "Drawing and sketching"
       |        }
       |      }
       |    ],
-      |    "created_at": "2021-07-12T09:50:06.000Z",
+      |    "conversation_id": "1416741697065652227",
+      |    "created_at": "2021-07-18T12:48:37.000Z",
       |    "entities": {
-      |      "cashtags": [
+      |      "hashtags": [
       |        {
-      |          "start": 0,
-      |          "end": 4,
-      |          "tag": "UNH"
+      |          "start": 38,
+      |          "end": 40,
+      |          "tag": "猫"
       |        },
       |        {
-      |          "start": 5,
-      |          "end": 8,
-      |          "tag": "GS"
+      |          "start": 41,
+      |          "end": 44,
+      |          "tag": "ねこ"
       |        },
       |        {
-      |          "start": 9,
-      |          "end": 13,
-      |          "tag": "CAT"
+      |          "start": 45,
+      |          "end": 50,
+      |          "tag": "イラスト"
+      |        },
+      |        {
+      |          "start": 51,
+      |          "end": 61,
+      |          "tag": "イラストレーション"
+      |        },
+      |        {
+      |          "start": 62,
+      |          "end": 74,
+      |          "tag": "絵描きさんと繋がりたい"
+      |        },
+      |        {
+      |          "start": 75,
+      |          "end": 90,
+      |          "tag": "イラスト好きさんと繋がりたい"
+      |        },
+      |        {
+      |          "start": 91,
+      |          "end": 106,
+      |          "tag": "イラスト好きな人と繋がりたい"
+      |        },
+      |        {
+      |          "start": 108,
+      |          "end": 120,
+      |          "tag": "猫好きさんと繋がりたい"
+      |        },
+      |        {
+      |          "start": 121,
+      |          "end": 133,
+      |          "tag": "猫好きな人と繋がりたい"
+      |        },
+      |        {
+      |          "start": 135,
+      |          "end": 139,
+      |          "tag": "cat"
+      |        },
+      |        {
+      |          "start": 140,
+      |          "end": 153,
+      |          "tag": "illustration"
       |        }
       |      ],
       |      "urls": [
       |        {
-      |          "start": 244,
-      |          "end": 267,
-      |          "url": "https://t.co/KCBI8aqOAK",
-      |          "expanded_url": "https://bit.ly/3hWgaZf",
-      |          "display_url": "bit.ly/3hWgaZf",
-      |          "images": [
-      |            {
-      |              "url": "https://pbs.twimg.com/news_img/1413025773070524419/8ldb19Me?format=jpg&name=orig",
-      |              "width": 1200,
-      |              "height": 628
-      |            },
-      |            {
-      |              "url": "https://pbs.twimg.com/news_img/1413025773070524419/8ldb19Me?format=jpg&name=150x150",
-      |              "width": 150,
-      |              "height": 150
-      |            }
-      |          ],
-      |          "status": 200,
-      |          "title": "Request Your Trial",
-      |          "description": "Request your trial for 10 euros only for 2 days. If you confirm your trial, your 10 euros will be deducted from your subscription purchase",
-      |          "unwound_url": "https://best-trading-indicator.com/pages/trial"
-      |        },
-      |        {
-      |          "start": 268,
-      |          "end": 291,
-      |          "url": "https://t.co/FksD3xa1lH",
-      |          "expanded_url": "https://twitter.com/bti_trading/status/1414522447882342401/photo/1",
-      |          "display_url": "pic.twitter.com/FksD3xa1lH"
-      |        },
-      |        {
-      |          "start": 268,
-      |          "end": 291,
-      |          "url": "https://t.co/FksD3xa1lH",
-      |          "expanded_url": "https://twitter.com/bti_trading/status/1414522447882342401/photo/1",
-      |          "display_url": "pic.twitter.com/FksD3xa1lH"
-      |        },
-      |        {
-      |          "start": 268,
-      |          "end": 291,
-      |          "url": "https://t.co/FksD3xa1lH",
-      |          "expanded_url": "https://twitter.com/bti_trading/status/1414522447882342401/photo/1",
-      |          "display_url": "pic.twitter.com/FksD3xa1lH"
+      |          "start": 154,
+      |          "end": 177,
+      |          "url": "https://t.co/rHP2SInzzM",
+      |          "expanded_url": "https://twitter.com/yukari_illust/status/1416741697065652227/photo/1",
+      |          "display_url": "pic.twitter.com/rHP2SInzzM"
       |        }
       |      ]
       |    },
-      |    "id": "1414522447882342401",
-      |    "lang": "en",
+      |    "geo": {},
+      |    "id": "1416741697065652227",
+      |    "lang": "ja",
+      |    "non_public_metrics": {},
+      |    "possibly_sensitive": false,
       |    "public_metrics": {
       |      "retweet_count": 0,
       |      "reply_count": 0,
       |      "like_count": 0,
       |      "quote_count": 0
       |    },
-      |    "text": "$UNH $GS $CAT H1\nDo you want to finally make consistent profits with your stocks trading?\n\nOur system will help you find the best trades and avoid common mistakes. ! It is based on an advanced mathematical algorithm with a high accuracy rate.\n https://t.co/KCBI8aqOAK https://t.co/FksD3xa1lH"
+      |    "source": "Twitter for iPhone",
+      |    "text": "みかん🍊\nProcreateで描くコツをだいぶ掴んできた気がします__✍︎\n#猫\n#ねこ\n#イラスト\n#イラストレーション\n#絵描きさんと繋がりたい\n#イラスト好きさんと繋がりたい\n#イラスト好きな人と繋がりたい \n#猫好きさんと繋がりたい\n#猫好きな人と繋がりたい \n#cat\n#illustration https://t.co/rHP2SInzzM"
       |  },
       |  "includes": {
       |    "media": [
       |      {
-      |        "media_key": "3_1414522386758651907",
-      |        "type": "photo"
-      |      },
-      |      {
-      |        "media_key": "3_1414522391737348096",
-      |        "type": "photo"
-      |      },
-      |      {
-      |        "media_key": "3_1414522397009534976",
+      |        "media_key": "3_1416741692166733836",
       |        "type": "photo"
       |      }
       |    ],
       |    "users": [
       |      {
-      |        "id": "1176621624948404224",
-      |        "name": "Best Trading Indicator",
-      |        "username": "bti_trading"
+      |        "created_at": "2020-09-08T06:58:10.000Z",
+      |        "description": "猫と動物のイラストを描くのが大好きです。主に猫をモチーフに鉛筆画をメインで描いております✏️他にも様々な画風で作品を制作中です。SUZURIにてグッズ販売中なので是非ご覧ください🖼無断転載ご遠慮願います🙅🏻‍♀️Instagram▶︎yukari224_illustration",
+      |        "id": "1303226063745503233",
+      |        "location": "大阪",
+      |        "name": "yukari",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/1303226254577954816/crvJ4lc4_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 227,
+      |          "following_count": 149,
+      |          "tweet_count": 417,
+      |          "listed_count": 3
+      |        },
+      |        "url": "https://t.co/eiwdjwBeV2",
+      |        "username": "yukari_illust",
+      |        "verified": false
       |      }
       |    ]
       |  },
