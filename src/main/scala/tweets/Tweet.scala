@@ -8,23 +8,30 @@ import utils.JSONParser
 import scala.language.postfixOps
 
 case class Domain(id: String, name: String, description: String)
-case object Domain { val domain: BSONDocumentHandler[Domain] = Macros.handler[Domain] }
+case object Domain {
+  val domainHandler: BSONDocumentHandler[Domain] = Macros.handler[Domain]
+
+  val domainSeqReader: BSONReader[Seq[Domain]] = BSONReader.iterable[Domain, Seq](domainHandler readTry)
+  val domainSeqWriter: BSONWriter[Seq[Domain]] = BSONWriter.sequence[Domain](domainHandler writeTry)
+}
 
 case class Entity(id: String, name: String, description: String)
-case object Entity { val entity: BSONDocumentHandler[Entity] = Macros.handler[Entity] }
+case object Entity {
+  val entityHandler: BSONDocumentHandler[Entity] = Macros.handler[Entity]
+
+  val entitySeqReader: BSONReader[Seq[Entity]] = BSONReader.iterable[Entity, Seq](entityHandler readTry)
+  val entitySeqWriter: BSONWriter[Seq[Entity]] = BSONWriter.sequence[Entity](entityHandler writeTry)
+}
 
 /*
   Entity recognition/extraction, topical analysis
  */
-case class Context(domain: Domain, entity: Entity)
+case class Context(domain: Option[Seq[Domain]]=None, entity: Option[Seq[Entity]])
 case object Context {
   implicit val domain: BSONDocumentHandler[Domain] = Macros.handler[Domain]
   implicit val entity: BSONDocumentHandler[Entity] = Macros.handler[Entity]
 
   val contextHandler: BSONHandler[Context] = Macros.handler[Context]
-
-  val contextSeqReader: BSONReader[Seq[Context]] = BSONReader.iterable[Context, Seq](contextHandler readTry)
-  val contextSeqWriter: BSONWriter[Seq[Context]] = BSONWriter.sequence[Context](contextHandler writeTry)
 }
 
 /*
@@ -123,7 +130,7 @@ case class Tweet(
                   inReplyToUserId:   Option[String]           =None,  // If the represented Tweet is a reply, this field will contain the original Tweet’s author ID
                   publicMetrics:     Option[PublicMetrics]    =None,  // Public engagement metrics for the Tweet at the time of the request
                   nonPublicMetrics:  Option[NonPublicMetrics] =None,  // Non-public engagement metrics for the Tweet at the time of the request
-                  context:           Option[Seq[Context]]     =None,  // Contains context annotations for the Tweet
+                  context:           Option[Context]          =None,  // Contains context annotations for the Tweet
                   entities:          Option[Entities]         =None,  // Entities which have been parsed out of the text of the Tweet
                   mentionedUsers:    Option[Seq[User]]        =None,  // Users this tweet has mentioned in the body text
                   matchingRules:     Option[Seq[MatchingRule]]=None,  // annotations about which filtered Rule this tweet was matched with
@@ -284,15 +291,15 @@ case object Tweet {
   def applyMetrics(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     val publicMetrics: Map[String, Any] = dataMap.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]
     val nonPublicMetrics: Map[String, Any] = dataMap.getOrElse("non_public_metrics", Map()).asInstanceOf[Map[String, Any]]
-    val withPublicMetrics = if (publicMetrics.nonEmpty) {
-      applyPublicMetrics(tweet, publicMetrics)
-    } else {
+    val withPublicMetrics = if (publicMetrics.isEmpty) {
       Some(tweet)
-    }
-    if (nonPublicMetrics.nonEmpty) {
-      applyNonPublicMetrics(tweet, nonPublicMetrics)
     } else {
+      applyPublicMetrics(tweet, publicMetrics)
+    }
+    if (nonPublicMetrics.isEmpty) {
       withPublicMetrics
+    } else {
+      applyNonPublicMetrics(tweet, nonPublicMetrics)
     }
   }
 
@@ -352,9 +359,9 @@ case object Tweet {
   }
 
   def applyContext(tweet: Tweet, data: Map[String, Any]): Option[Tweet] = {
-    val context: Option[Seq[Context]] = extractContext(data.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
+    val context: Option[Context] = extractContext(data.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
     context match {
-      case Some(_: Seq[Context]) =>
+      case Some(_: Context) =>
         Some(Tweet(
           id=tweet.id,
           text=tweet.text,
@@ -376,9 +383,9 @@ case object Tweet {
   }
 
   def applyEntities(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
-    val entities = extractEntities(dataMap.getOrElse("entities", Map()).asInstanceOf[Map[String, Any]])
+    val entities: Option[Entities] = extractEntities(dataMap.getOrElse("entities", Map()).asInstanceOf[Map[String, Any]])
     entities match {
-      case Some(_: Seq[Entities]) =>
+      case Some(_: Entities) =>
         Some(Tweet(
           id=tweet.id,
           text=tweet.text,
@@ -483,15 +490,21 @@ case object Tweet {
   }
 
   // Raw data might contain duplicated context annotations
-  def extractContext(context: List[Map[String, Any]]): Option[Seq[Context]] = {
-    if (context.nonEmpty) {
-      Some(context.distinct.flatMap(context => {
-        val domain = extractDomain(context("domain").asInstanceOf[Map[String, Any]])
-        val entity = extractEntity(context("entity").asInstanceOf[Map[String, Any]])
-        List(Context(domain = domain, entity = entity))
-      }))
-    } else {
+  def extractContext(context: List[Map[String, Any]]): Option[Context] = {
+    if (context.isEmpty) {
       None
+    } else {
+      var domainList: Seq[Domain] = List()
+      var entityList: Seq[Entity] = List()
+      context.distinct.foreach(context => {
+        domainList = domainList :+ extractDomain(context("domain").asInstanceOf[Map[String, Any]])
+        entityList = entityList :+ extractEntity(context("entity").asInstanceOf[Map[String, Any]])
+      })
+      if (domainList.isEmpty && entityList.isEmpty) {
+        None
+      } else {
+        Some(Context(domain = Some(domainList.distinct), entity = Some(entityList.distinct)))
+      }
     }
   }
 
@@ -513,7 +526,9 @@ case object Tweet {
 
   // Raw data might contain duplicated context annotations
   def extractEntities(entities: Map[String, Any]): Option[Entities] = {
-    if (entities.nonEmpty) {
+    if (entities.isEmpty) {
+      None
+    } else {
       val urls = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
       val hashtags = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
       // entities object could contain mentions (users), hashtags, urls, cashtags ans other attributes
@@ -523,14 +538,14 @@ case object Tweet {
       } else {
         Some(Entities(mentionedUrls = urls, hashtags = hashtags))
       }
-    } else {
-      None
     }
   }
 
   // extract all users within "includes" data map, contains both author and mentioned users
   def extractUsers(userMap: List[Map[String, Any]]): Option[Seq[User]] = {
-    if (userMap.nonEmpty) {
+    if (userMap.isEmpty) {
+      None
+    } else {
       Some(
         userMap.distinct.flatMap(user => List(
           User(
@@ -544,16 +559,16 @@ case object Tweet {
             metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
             url = user.get("url").asInstanceOf[Option[String]],
             verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
-          )
+        )
         )
       )
-    } else {
-      None
     }
   }
 
   def extractUserMetrics(metrics: Map[String, Any]): Option[UserMetrics] = {
-    if (metrics.nonEmpty) {
+    if (metrics.isEmpty) {
+      None
+    } else {
       Some(
         UserMetrics(
           followersCount = metrics.getOrElse("followers_count", 0).asInstanceOf[Int],
@@ -562,8 +577,6 @@ case object Tweet {
           listedCount = metrics.getOrElse("listed_count", 0).asInstanceOf[Int]
         )
       )
-    } else {
-      None
     }
   }
 
@@ -579,36 +592,38 @@ case object Tweet {
   }
 
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Seq[Url]] = {
-    if (urlList.nonEmpty) {
+    if (urlList.isEmpty) {
+      None
+    } else {
       Some(
         urlList.distinct.flatMap(url => List(
-            Url(
-              url = url.getOrElse("url", "").asInstanceOf[String],
-              expandedUrl = url.getOrElse("expanded_url", "").asInstanceOf[String],
-              displayUrl = url.getOrElse("display_url", "").asInstanceOf[String],
-            )
+          Url(
+            url = url.getOrElse("url", "").asInstanceOf[String],
+            expandedUrl = url.getOrElse("expanded_url", "").asInstanceOf[String],
+            displayUrl = url.getOrElse("display_url", "").asInstanceOf[String],
           )
         )
+        )
       )
-    } else {
-      None
     }
   }
 
   def extractHashtags(hashtags: List[Map[String,Any]]): Option[Seq[String]] ={
-    if (hashtags.nonEmpty) {
+    if (hashtags.isEmpty) {
+      None
+    } else {
       Some(
         hashtags.distinct.flatMap(tag => {
           val t = tag.getOrElse("tag", "").asInstanceOf[String]; if (t == "") List() else List(t)
         })
       )
-    } else {
-      None
     }
   }
 
   def extractRules(ruleList: List[Map[String, Any]]): Option[Seq[MatchingRule]] = {
-    if (ruleList.nonEmpty) {
+    if (ruleList.isEmpty) {
+      None
+    } else {
       Some(
         ruleList.distinct.flatMap(rule => {
           val id = rule.getOrElse("id", "").toString
@@ -616,8 +631,6 @@ case object Tweet {
           if (id != "" && tag != "") List(MatchingRule(id, tag)) else List()
         })
       )
-    } else {
-      None
     }
   }
 
@@ -630,7 +643,7 @@ case object Tweet {
       inReplyToUserId = Some(row.get(4).asInstanceOf[String]),
       publicMetrics = createPublicMetrics(Some(row.get(5).asInstanceOf[Row])),
       nonPublicMetrics = createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row])),
-      context = createContext(Some(row.getSeq[Row](7))),
+      context = createContext(Some(row.get(7).asInstanceOf[Row])),
       entities = createEntities(Some(row.get(8).asInstanceOf[Row])),
       mentionedUsers = createMentionedUsers(Some(row.getSeq[Row](9))),
       matchingRules = createMatchingRules(Some(row.getSeq[Row](10))),
@@ -685,17 +698,16 @@ case object Tweet {
   }
 
   // TODO deduplicate context
-  def createContext(rows: Option[Seq[Row]]): Option[Seq[Context]] = {
+  def createContext(rows: Option[Row]): Option[Context] = {
     rows match {
-      case Some(values: Seq[Row]) =>
-        Some(values.map(context => {
-          val domainRow = context.get(0).asInstanceOf[Row]
-          val entityRow = context.get(1).asInstanceOf[Row]
-          Context(
-            domain = Domain(id = domainRow.getString(0), name = domainRow.getString(1), description = domainRow.getString(2)),
-            entity = Entity(id = entityRow.getString(0), name = entityRow.getString(1), description = entityRow.getString(2))
-          )
-        }))
+      case Some(value: Row) =>
+        val domainList: Seq[Domain] = value.getSeq[Domain](0)
+        val entityList: Seq[Entity] = value.getSeq[Entity](1)
+        if (domainList.isEmpty && entityList.isEmpty) {
+          None
+        } else {
+          Some(Context(domain = Some(domainList.distinct), entity = Some(entityList.distinct)))
+        }
       case _ => None
     }
   }
