@@ -488,7 +488,7 @@ case object Tweet {
   // Raw data might contain duplicated context annotations
   def extractContext(context: List[Map[String, Any]]): Option[Seq[Context]] = {
     if (context.nonEmpty) {
-      Some(context.flatMap(context => {
+      Some(context.distinct.flatMap(context => {
         val domain = extractDomain(context("domain").asInstanceOf[Map[String, Any]])
         val entity = extractEntity(context("entity").asInstanceOf[Map[String, Any]])
         List(Context(domain = domain, entity = entity))
@@ -535,7 +535,7 @@ case object Tweet {
   def extractUsers(userMap: List[Map[String, Any]]): Option[Seq[User]] = {
     if (userMap.nonEmpty) {
       Some(
-        userMap.flatMap(user => List(
+        userMap.distinct.flatMap(user => List(
           User(
             id = user.getOrElse("id", "").asInstanceOf[String],
             name = user.getOrElse("name", "").asInstanceOf[String],
@@ -584,7 +584,7 @@ case object Tweet {
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Seq[Url]] = {
     if (urlList.nonEmpty) {
       Some(
-        urlList.flatMap(url => List(
+        urlList.distinct.flatMap(url => List(
             Url(
               url = url.getOrElse("url", "").asInstanceOf[String],
               expandedUrl = url.getOrElse("expanded_url", "").asInstanceOf[String],
@@ -601,7 +601,7 @@ case object Tweet {
   def extractHashtags(hashtags: List[Map[String,Any]]): Option[Seq[String]] ={
     if (hashtags.nonEmpty) {
       Some(
-        hashtags.flatMap(tag => {
+        hashtags.distinct.flatMap(tag => {
           val t = tag.getOrElse("tag", "").asInstanceOf[String]; if (t == "") List() else List(t)
         })
       )
@@ -613,7 +613,7 @@ case object Tweet {
   def extractRules(ruleList: List[Map[String, Any]]): Option[Seq[MatchingRule]] = {
     if (ruleList.nonEmpty) {
       Some(
-        ruleList.flatMap(rule => {
+        ruleList.distinct.flatMap(rule => {
           val id = rule.getOrElse("id", "").toString
           val tag = rule.getOrElse("tag", "").asInstanceOf[String]
           if (id != "" && tag != "") List(MatchingRule(id, tag)) else List()
