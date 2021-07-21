@@ -133,6 +133,68 @@ class CreateTweetsTest extends AnyFunSuite{
       |}
       |""".stripMargin
 
+  val withDuplicateContext: String =
+    """
+      |{
+      |  "data": {
+      |    "attachments": {},
+      |    "author_id": "1265277812753096705",
+      |    "context_annotations": [
+      |      {
+      |        "domain": {
+      |          "id": "10",
+      |          "name": "Person",
+      |          "description": "Named people in the world like Nelson Mandela"
+      |        },
+      |        "entity": {
+      |          "id": "1360347332030517248",
+      |          "name": "Ajith Kumar"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "10",
+      |          "name": "Person",
+      |          "description": "Named people in the world like Nelson Mandela"
+      |        },
+      |        "entity": {
+      |          "id": "1360347332030517248",
+      |          "name": "Ajith Kumar"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "56",
+      |          "name": "Actor",
+      |          "description": "An actor or actress in the world, like Kate Winslet or Leonardo DiCaprio"
+      |        },
+      |        "entity": {
+      |          "id": "1360347332030517248",
+      |          "name": "Ajith Kumar"
+      |        }
+      |      },
+      |      {
+      |        "domain": {
+      |          "id": "56",
+      |          "name": "Actor",
+      |          "description": "An actor or actress in the world, like Kate Winslet or Leonardo DiCaprio"
+      |        },
+      |        "entity": {
+      |          "id": "1360347332030517248",
+      |          "name": "Ajith Kumar"
+      |        }
+      |      }
+      |    ],
+      |    "conversation_id": "1416741686412148740",
+      |    "created_at": "2021-07-18T12:48:34.000Z",
+      |    "id": "1416741686412148740",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @nive_jessie: My all time fav meme ❤😍😘😎\nHappiest birthday to our thala❤💌🔥😍 Wishing him more success \n#HBDThalaAjith #AjithKumar #Ajith #…"
+      |  }
+      |}
+      |""".stripMargin
+
   val emptyEntities: String =
     """
       |{
@@ -173,6 +235,47 @@ class CreateTweetsTest extends AnyFunSuite{
       |}
       |""".stripMargin
 
+  val entitiesWithDuplicateUrls: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "1113386101958430721",
+      |    "conversation_id": "1416741678204035075",
+      |    "created_at": "2021-07-18T12:48:32.000Z",
+      |    "entities": {
+      |      "urls": [
+      |        {
+      |          "start": 41,
+      |          "end": 64,
+      |          "url": "https://t.co/JbMspu4TSj",
+      |          "expanded_url": "https://twitter.com/davidneedhelp/status/1416142877164507136/photo/1",
+      |          "display_url": "pic.twitter.com/JbMspu4TSj"
+      |        },
+      |        {
+      |          "start": 41,
+      |          "end": 64,
+      |          "url": "https://t.co/JbMspu4TSj",
+      |          "expanded_url": "https://twitter.com/davidneedhelp/status/1416142877164507136/photo/1",
+      |          "display_url": "pic.twitter.com/JbMspu4TSj"
+      |        },
+      |        {
+      |          "start": 41,
+      |          "end": 64,
+      |          "url": "https://t.co/JbMspu4TSj",
+      |          "expanded_url": "https://twitter.com/davidneedhelp/status/1416142877164507136/photo/1",
+      |          "display_url": "pic.twitter.com/JbMspu4TSj"
+      |        }
+      |      ]
+      |    },
+      |    "geo": {},
+      |    "id": "1416741678204035075",
+      |    "lang": "en",
+      |    "source": "Twitter for iPhone",
+      |    "text": "RT @davidneedhelp: niche meme abt my dog https://t.co/JbMspu4TSj"
+      |  }
+      |}
+      |""".stripMargin
+
   val entitiesWithHashtags: String =
     """
       |{
@@ -196,6 +299,46 @@ class CreateTweetsTest extends AnyFunSuite{
       |    "id": "1414522447341129730",
       |    "lang": "en",
       |    "text": "RT @kay_tee_kat: Sometimes a perfect trio only needs a cute mechanic, a pipsqueak, and a cat detector\n\n#鋼の錬金術師 #FMA https://t.co/9Qb5ZrJ5mO"
+      |  }
+      |}
+      |""".stripMargin
+
+  val entitiesWithDuplicateHashtags: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "1371324495735054341",
+      |    "conversation_id": "1416741683610284036",
+      |    "created_at": "2021-07-18T12:48:33.000Z",
+      |    "entities": {
+      |      "hashtags": [
+      |        {
+      |          "start": 28,
+      |          "end": 35,
+      |          "tag": "Master"
+      |        },
+      |        {
+      |          "start": 36,
+      |          "end": 42,
+      |          "tag": "Beast"
+      |        },
+      |        {
+      |          "start": 28,
+      |          "end": 35,
+      |          "tag": "Master"
+      |        },
+      |        {
+      |          "start": 36,
+      |          "end": 42,
+      |          "tag": "Beast"
+      |        }
+      |      ]
+      |    },
+      |    "geo": {},
+      |    "id": "1416741683610284036",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @Sridhar_sw: This meme 😂\n#Master #Beast https://t.co/NhpSzQAZeB"
       |  }
       |}
       |""".stripMargin
@@ -229,20 +372,6 @@ class CreateTweetsTest extends AnyFunSuite{
       |          "tag": "PancakeSwap"
       |        }
       |      ],
-      |      "mentions": [
-      |        {
-      |          "start": 0,
-      |          "end": 13,
-      |          "username": "BinanceChain",
-      |          "id": "1052454006537314306"
-      |        },
-      |        {
-      |          "start": 14,
-      |          "end": 30,
-      |          "username": "yooshi_official",
-      |          "id": "1169626188"
-      |        }
-      |      ],
       |      "urls": [
       |        {
       |          "start": 170,
@@ -257,6 +386,164 @@ class CreateTweetsTest extends AnyFunSuite{
       |    "in_reply_to_user_id": "1052454006537314306",
       |    "lang": "en",
       |    "text": "@BinanceChain @yooshi_official 💘 BabyAkuDoge Fair Launch Soon! 💘\n\nTHE BEST MEME TOKEN!\n\n🌈Earn BUSD Just by Holding!\n\n#Binance #BinanceSmartChain #FairLaunch #PancakeSwap https://t.co/am3mSbEHD9"
+      |  }
+      |}
+      |""".stripMargin
+
+  val emptyUsers: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "808957898290331648",
+      |    "conversation_id": "1416741688211501058",
+      |    "created_at": "2021-07-18T12:48:34.000Z",
+      |    "id": "1416741688211501058",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @Chinmayi: In addition, regional ‘meme’ pages - I speak for Telugu, Tamil, Kannada and Malayalam are flush with a majority of abuse, sex…"
+      |  },
+      |  "includes": {
+      |    "users": []
+      |  }
+      |}
+      |""".stripMargin
+
+  val withUsers: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "808957898290331648",
+      |    "conversation_id": "1416741688211501058",
+      |    "created_at": "2021-07-18T12:48:34.000Z",
+      |    "id": "1416741688211501058",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @Chinmayi: In addition, regional ‘meme’ pages - I speak for Telugu, Tamil, Kannada and Malayalam are flush with a majority of abuse, sex…"
+      |  },
+      |  "includes": {
+      |    "users": [
+      |      {
+      |        "created_at": "2016-12-14T08:52:47.000Z",
+      |        "description": "#ಕನ್ನಡಿಗ=ಭಾರತೀಯ, I am son of Parvati & Bhimarao from Karnataka IN Working in TTSL as Deputy Manager ಕನ್ನಡ, ಭಾರತದ ಅಧಿಕೃತ ಭಾಷೆಗಳಲ್ಲೊಂದು. ಭಾರತಕ್ಕೆ ರಾಷ್ಟ್ರ ಭಾಷೆಇಲ್ಲ",
+      |        "id": "808957898290331648",
+      |        "location": "ಕರ್ನಾಟಕರಾಷ್ಟ್ರ-KarnatakaNation",
+      |        "name": "BASAVARAJ GB",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/808964310319906816/SAxNj9v-_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 2224,
+      |          "following_count": 2234,
+      |          "tweet_count": 274047,
+      |          "listed_count": 5
+      |        },
+      |        "url": "",
+      |        "username": "basavaraj_gb",
+      |        "verified": false
+      |      },
+      |      {
+      |        "created_at": "2007-08-26T16:59:56.000Z",
+      |        "description": "A Voice. Strangled Songbird.  -  Founder- https://t.co/VR8PsugwZP  Blue Elephant Translation Services  https://t.co/u1cTlTH27Q bringing K-Beauty to India",
+      |        "id": "8443752",
+      |        "location": "India",
+      |        "name": "Chinmayi Sripaada",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/1415391255295496196/-PNqC_pd_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 1057461,
+      |          "following_count": 446,
+      |          "tweet_count": 70119,
+      |          "listed_count": 1375
+      |        },
+      |        "url": "https://t.co/yC8739qBkz",
+      |        "username": "Chinmayi",
+      |        "verified": true
+      |      }
+      |    ]
+      |  }
+      |}
+      |""".stripMargin
+
+  val withDuplicateUsers: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "808957898290331648",
+      |    "conversation_id": "1416741688211501058",
+      |    "created_at": "2021-07-18T12:48:34.000Z",
+      |    "id": "1416741688211501058",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @Chinmayi: In addition, regional ‘meme’ pages - I speak for Telugu, Tamil, Kannada and Malayalam are flush with a majority of abuse, sex…"
+      |  },
+      |  "includes": {
+      |    "users": [
+      |      {
+      |        "created_at": "2016-12-14T08:52:47.000Z",
+      |        "description": "#ಕನ್ನಡಿಗ=ಭಾರತೀಯ, I am son of Parvati & Bhimarao from Karnataka IN Working in TTSL as Deputy Manager ಕನ್ನಡ, ಭಾರತದ ಅಧಿಕೃತ ಭಾಷೆಗಳಲ್ಲೊಂದು. ಭಾರತಕ್ಕೆ ರಾಷ್ಟ್ರ ಭಾಷೆಇಲ್ಲ",
+      |        "id": "808957898290331648",
+      |        "location": "ಕರ್ನಾಟಕರಾಷ್ಟ್ರ-KarnatakaNation",
+      |        "name": "BASAVARAJ GB",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/808964310319906816/SAxNj9v-_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 2224,
+      |          "following_count": 2234,
+      |          "tweet_count": 274047,
+      |          "listed_count": 5
+      |        },
+      |        "url": "",
+      |        "username": "basavaraj_gb",
+      |        "verified": false
+      |      },
+      |      {
+      |        "created_at": "2007-08-26T16:59:56.000Z",
+      |        "description": "A Voice. Strangled Songbird.  -  Founder- https://t.co/VR8PsugwZP  Blue Elephant Translation Services  https://t.co/u1cTlTH27Q bringing K-Beauty to India",
+      |        "id": "8443752",
+      |        "location": "India",
+      |        "name": "Chinmayi Sripaada",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/1415391255295496196/-PNqC_pd_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 1057461,
+      |          "following_count": 446,
+      |          "tweet_count": 70119,
+      |          "listed_count": 1375
+      |        },
+      |        "url": "https://t.co/yC8739qBkz",
+      |        "username": "Chinmayi",
+      |        "verified": true
+      |      },
+      |      {
+      |        "created_at": "2016-12-14T08:52:47.000Z",
+      |        "description": "#ಕನ್ನಡಿಗ=ಭಾರತೀಯ, I am son of Parvati & Bhimarao from Karnataka IN Working in TTSL as Deputy Manager ಕನ್ನಡ, ಭಾರತದ ಅಧಿಕೃತ ಭಾಷೆಗಳಲ್ಲೊಂದು. ಭಾರತಕ್ಕೆ ರಾಷ್ಟ್ರ ಭಾಷೆಇಲ್ಲ",
+      |        "id": "808957898290331648",
+      |        "location": "ಕರ್ನಾಟಕರಾಷ್ಟ್ರ-KarnatakaNation",
+      |        "name": "BASAVARAJ GB",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/808964310319906816/SAxNj9v-_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 2224,
+      |          "following_count": 2234,
+      |          "tweet_count": 274047,
+      |          "listed_count": 5
+      |        },
+      |        "url": "",
+      |        "username": "basavaraj_gb",
+      |        "verified": false
+      |      },
+      |      {
+      |        "created_at": "2007-08-26T16:59:56.000Z",
+      |        "description": "A Voice. Strangled Songbird.  -  Founder- https://t.co/VR8PsugwZP  Blue Elephant Translation Services  https://t.co/u1cTlTH27Q bringing K-Beauty to India",
+      |        "id": "8443752",
+      |        "location": "India",
+      |        "name": "Chinmayi Sripaada",
+      |        "profile_image_url": "https://pbs.twimg.com/profile_images/1415391255295496196/-PNqC_pd_normal.jpg",
+      |        "public_metrics": {
+      |          "followers_count": 1057461,
+      |          "following_count": 446,
+      |          "tweet_count": 70119,
+      |          "listed_count": 1375
+      |        },
+      |        "url": "https://t.co/yC8739qBkz",
+      |        "username": "Chinmayi",
+      |        "verified": true
+      |      }
+      |    ]
       |  }
       |}
       |""".stripMargin
@@ -294,6 +581,39 @@ class CreateTweetsTest extends AnyFunSuite{
       |    {
       |      "id": 1414212694220157000,
       |      "tag": "demo test"
+      |    }
+      |  ]
+      |}
+      |""".stripMargin
+
+  val withDuplicateMatchingRules: String =
+    """
+      |{
+      |  "data": {
+      |    "author_id": "1371324495735054341",
+      |    "conversation_id": "1416741683610284036",
+      |    "created_at": "2021-07-18T12:48:33.000Z",
+      |    "id": "1416741683610284036",
+      |    "lang": "en",
+      |    "source": "Twitter for Android",
+      |    "text": "RT @Sridhar_sw: This meme 😂\n#Master #Beast https://t.co/NhpSzQAZeB"
+      |  },
+      |  "matching_rules": [
+      |    {
+      |      "id": 1414212694220157000,
+      |      "tag": ""
+      |    },
+      |    {
+      |      "id": 1414212694220157000,
+      |      "tag": "funny things"
+      |    },
+      |    {
+      |      "id": 1414212694220157000,
+      |      "tag": ""
+      |    },
+      |    {
+      |      "id": 1414212694220157000,
+      |      "tag": "funny things"
       |    }
       |  ]
       |}
@@ -502,83 +822,123 @@ class CreateTweetsTest extends AnyFunSuite{
       |}
       |""".stripMargin
 
-  test("non validate json data") {
+  test("non validate json data should return None") {
     val tweet = Tweet.createTweet(nonValidateJson)
     assert(tweet.isEmpty)
   }
 
-  test("empty json data") {
+  test("empty json data should return None") {
     val tweet = Tweet.createTweet(emptyJson)
     assert(tweet.isEmpty)
   }
 
   test("build basic tweet") {
     val tweet = Tweet.createTweet(basicDocument)
-    println(tweet)
+    assert(tweet.get.author.isEmpty)
+    assert(tweet.get.context.isEmpty)
+    assert(tweet.get.entities.isEmpty)
+    assert(tweet.get.publicMetrics.isEmpty)
+    assert(tweet.get.nonPublicMetrics.isEmpty)
+    assert(tweet.get.mentionedUsers.isEmpty)
+    assert(tweet.get.matchingRules.isEmpty)
   }
 
   test("build tweet with public metrics") {
     val tweet = Tweet.createTweet(publicMetrics)
-    println(tweet)
+    assert(tweet.get.publicMetrics.nonEmpty)
   }
 
   test("build tweet with non public metrics") {
     val tweet = Tweet.createTweet(nonPublicMetrics)
-    println(tweet)
+    assert(tweet.get.nonPublicMetrics.nonEmpty)
   }
 
   test("build tweet with empty context") {
     val tweet = Tweet.createTweet(emptyContext)
-    println(tweet)
+    assert(tweet.get.context.isEmpty)
   }
 
-  test("build tweet with context") {
-    val dataMap = JSONParser.parseJson(withContext).get("data").asInstanceOf[Map[String, Any]]
-    val tweet = Tweet.buildBasicTweet(dataMap)
-    val context = Tweet.applyContext(tweet.get, dataMap)
-    println(context)
+  test("build tweet with context containing two domains and entities") {
+    val tweet = Tweet.createTweet(withContext)
+    assert(tweet.get.context.get.domain.get.size.equals(2))
+    assert(tweet.get.context.get.entity.get.size.equals(2))
   }
 
-  test("build tweet empty entities") {
-    val dataMap = JSONParser.parseJson(withContext).get("data").asInstanceOf[Map[String, Any]]
-    val tweet = Tweet.buildBasicTweet(dataMap)
-    val empty = Tweet.applyEntities(tweet.get, dataMap)
-    println(empty)
+  test("build tweet with duplicate context") {
+    val tweet = Tweet.createTweet(withDuplicateContext)
+    assert(tweet.get.context.get.domain.get.size.equals(2))
+    assert(tweet.get.context.get.entity.get.size.equals(1))
   }
 
-  test("build tweet with urls within entities") {
-    val dataMap = JSONParser.parseJson(entitiesWithUrls).get("data").asInstanceOf[Map[String, Any]]
-    val tweet = Tweet.buildBasicTweet(dataMap)
-    val urls = Tweet.applyEntities(tweet.get, dataMap)
-    println(urls)
+  test("build tweet with empty entities") {
+    val tweet = Tweet.createTweet(emptyEntities)
+    assert(tweet.get.entities.isEmpty)
   }
 
-  test("build tweet with hashtags within entities") {
-    val dataMap = JSONParser.parseJson(entitiesWithHashtags).get("data").asInstanceOf[Map[String, Any]]
-    val tweet = Tweet.buildBasicTweet(dataMap)
-    val hashtags = Tweet.applyEntities(tweet.get, dataMap)
-    println(hashtags)
+  test("build tweet with one url") {
+    val tweet = Tweet.createTweet(entitiesWithUrls)
+    assert(tweet.get.entities.get.mentionedUrls.get.size.equals(1))
+  }
+
+  test("build tweet with duplicate urls") {
+    val tweet = Tweet.createTweet(entitiesWithDuplicateUrls)
+    assert(tweet.get.entities.get.mentionedUrls.get.size.equals(1))
+  }
+
+  test("build tweet with two hashtags") {
+    val tweet = Tweet.createTweet(entitiesWithHashtags)
+    assert(tweet.get.entities.get.hashtags.get.size.equals(2))
+  }
+
+  test("build tweet with duplicate hashtags") {
+    val tweet = Tweet.createTweet(entitiesWithDuplicateHashtags)
+    assert(tweet.get.entities.get.hashtags.get.size.equals(2))
   }
 
   test("build tweet with full entities") {
-    val dataMap = JSONParser.parseJson(fullEntities).get("data").asInstanceOf[Map[String, Any]]
-    val tweet = Tweet.buildBasicTweet(dataMap)
-    val full = Tweet.applyEntities(tweet.get, dataMap)
-    println(full)
+    val tweet = Tweet.createTweet(fullEntities)
+    assert(tweet.get.entities.get.hashtags.get.size.equals(4))
+    assert(tweet.get.entities.get.mentionedUrls.get.size.equals(1))
+  }
+
+  test("build tweet with empty user") {
+    val tweet = Tweet.createTweet(emptyUsers)
+    assert(tweet.get.mentionedUsers.isEmpty)
+  }
+
+  test("build tweet with one user") {
+    val tweet = Tweet.createTweet(withUsers)
+    assert(tweet.get.mentionedUsers.size.equals(1))
+  }
+
+  test("build tweet with duplicate users") {
+    val tweet = Tweet.createTweet(withDuplicateUsers)
+    assert(tweet.get.mentionedUsers.size.equals(1))
   }
 
   test("build tweet with empty matching rules") {
     val tweet = Tweet.createTweet(emptyMatchingRules)
-    println(tweet)
+    assert(tweet.get.matchingRules.isEmpty)
   }
 
-  test("build tweet with matching rules") {
+  test("build tweet with one matching rule") {
     val tweet = Tweet.createTweet(withMatchingRules)
-    println(tweet)
+    assert(tweet.get.matchingRules.size.equals(1))
   }
 
-  test("create tweet") {
+  test("build tweet with duplicate matching rules") {
+    val tweet = Tweet.createTweet(withDuplicateMatchingRules)
+    assert(tweet.get.matchingRules.size.equals(1))
+  }
+
+  test("create tweet with all possible attributes") {
     val tweet = Tweet.createTweet(semiFullDocument)
-    println(tweet)
+    assert(tweet.get.author.get.id.equals("1303226063745503233"))
+    assert(tweet.get.context.get.entity.get.size.equals(5))
+    assert(tweet.get.context.get.domain.get.size.equals(3))
+    assert(tweet.get.entities.get.hashtags.get.size.equals(11))
+    assert(tweet.get.entities.get.mentionedUrls.get.size.equals(1))
+    assert(tweet.get.mentionedUsers.isEmpty)
+    assert(tweet.get.matchingRules.get.size.equals(2))
   }
 }
