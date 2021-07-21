@@ -81,9 +81,6 @@ case object Entities {
   implicit val mentionedUrlHandler: BSONDocumentHandler[Url] = Macros.handler[Url]
 
   val entitiesHandler: BSONHandler[Entities] = Macros.handler[Entities]
-
-  val entitiesSeqReader: BSONReader[Seq[Entities]] = BSONReader.iterable[Entities, Seq](entitiesHandler readTry)
-  val entitiesSeqWriter: BSONWriter[Seq[Entities]] = BSONWriter.sequence[Entities](entitiesHandler writeTry)
 }
 
 /*
@@ -127,7 +124,7 @@ case class Tweet(
                   publicMetrics:     Option[PublicMetrics]    =None,  // Public engagement metrics for the Tweet at the time of the request
                   nonPublicMetrics:  Option[NonPublicMetrics] =None,  // Non-public engagement metrics for the Tweet at the time of the request
                   context:           Option[Seq[Context]]     =None,  // Contains context annotations for the Tweet
-                  entities:          Option[Seq[Entities]]    =None,  // Entities which have been parsed out of the text of the Tweet
+                  entities:          Option[Entities]         =None,  // Entities which have been parsed out of the text of the Tweet
                   mentionedUsers:    Option[Seq[User]]        =None,  // Users this tweet has mentioned in the body text
                   matchingRules:     Option[Seq[MatchingRule]]=None,  // annotations about which filtered Rule this tweet was matched with
                   conversationId:    Option[String]           =None,  // The Tweet ID of the original Tweet of the conversation (which includes direct replies, replies of replies).
@@ -515,7 +512,7 @@ case object Tweet {
   }
 
   // Raw data might contain duplicated context annotations
-  def extractEntities(entities: Map[String, Any]): Option[Seq[Entities]] = {
+  def extractEntities(entities: Map[String, Any]): Option[Entities] = {
     if (entities.nonEmpty) {
       val urls = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
       val hashtags = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
@@ -524,7 +521,7 @@ case object Tweet {
       if (urls.isEmpty && hashtags.isEmpty) {
         None
       } else {
-        Some(List(Entities(mentionedUrls = urls, hashtags = hashtags)))
+        Some(Entities(mentionedUrls = urls, hashtags = hashtags))
       }
     } else {
       None
@@ -634,7 +631,7 @@ case object Tweet {
       publicMetrics = createPublicMetrics(Some(row.get(5).asInstanceOf[Row])),
       nonPublicMetrics = createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row])),
       context = createContext(Some(row.getSeq[Row](7))),
-      entities = createEntities(Some(row.getSeq[Row](8))),
+      entities = createEntities(Some(row.get(8).asInstanceOf[Row])),
       mentionedUsers = createMentionedUsers(Some(row.getSeq[Row](9))),
       matchingRules = createMatchingRules(Some(row.getSeq[Row](10))),
       conversationId = Some(row.get(11).asInstanceOf[String]),
@@ -704,22 +701,24 @@ case object Tweet {
   }
 
   // TODO deduplicate entities
-  def createEntities(rows: Option[Seq[Row]]): Option[Seq[Entities]] =
+  def createEntities(rows: Option[Row]): Option[Entities] =
   {
     rows match {
-      case Some(values: Seq[Row]) =>
-        Some(values.map(entity => {
-          val hashtags: Option[Seq[String]] = Some(entity.getSeq[String](0))
-          val urlRows: Option[Seq[Row]] = Some(entity.getSeq[Row](1))
-          val urls: Option[Seq[Url]] = urlRows match {
-            case Some(rows: Seq[Row]) =>
-              Some(rows.map(row =>
-                Url(url = row.getString(0), expandedUrl = row.getString(1), displayUrl = row.getString(2))
-              ))
-            case _ => None
-          }
-          Entities(hashtags = hashtags, mentionedUrls = urls)
-        }))
+      case Some(value: Row) =>
+        val hashtags: Option[Seq[String]] = Some(value.getSeq[String](0))
+        val urlRows: Option[Seq[Row]] = Some(value.getSeq[Row](1))
+        val urls: Option[Seq[Url]] = urlRows match {
+          case Some(rows: Seq[Row]) =>
+            Some(rows.map(row =>
+              Url(url = row.getString(0), expandedUrl = row.getString(1), displayUrl = row.getString(2))
+            ))
+          case _ => None
+        }
+        if (hashtags.nonEmpty && urls.nonEmpty) {
+          Some(Entities(hashtags = hashtags, mentionedUrls = urls))
+        } else {
+          None
+        }
       case _ => None
     }
   }
