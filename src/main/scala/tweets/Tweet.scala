@@ -704,9 +704,14 @@ case object Tweet {
       case Some(values: Seq[Row]) =>
         Some(values.map(entity => {
           val hashtags: Option[Seq[String]] = Some(entity.getSeq[String](0))
-          val urls: Option[Seq[Url]] = Some(entity.getSeq[Row](1).map(urlRow => {
-            Url(url = urlRow.getString(0), expandedUrl = urlRow.getString(1), displayUrl = urlRow.getString(2))
-          }))
+          val urlRows: Option[Seq[Row]] = Some(entity.getSeq[Row](1))
+          val urls: Option[Seq[Url]] = urlRows match {
+            case Some(rows: Seq[Row]) =>
+              Some(rows.map(row =>
+                Url(url = row.getString(0), expandedUrl = row.getString(1), displayUrl = row.getString(2))
+              ))
+            case _ => None
+          }
           Entities(hashtags = hashtags, mentionedUrls = urls)
         }))
       case _ => None
