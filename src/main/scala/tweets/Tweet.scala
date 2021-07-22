@@ -595,11 +595,16 @@ case object Tweet {
     }
   }
 
-  // filter out the author, if it is presents, return the given users otherwise
+  // return mentioned users, the author excluded, if presents
   def extractMentionedUsers(author: Option[User]=None, users: Option[Seq[User]]): Option[Seq[User]] = {
     (author, users) match {
       case (Some(author: User), Some(users: Seq[User])) =>
-        Some(users.filter(user => !author.id.equals(user.id)))
+        val mentionedUsers = users.filter(user => !author.id.equals(user.id))
+        if (mentionedUsers.isEmpty) {
+          None
+        } else {
+          Some(mentionedUsers)
+        }
       case (None, Some(users: Seq[User])) =>
         Some(users)
       case (_, _) => users
