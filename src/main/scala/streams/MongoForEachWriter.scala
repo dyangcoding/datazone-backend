@@ -1,20 +1,35 @@
 package streams
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import db.TweetService
 import org.apache.spark.sql.{ForeachWriter, _}
+import org.apache.spark.internal.Logging
 import tweets.Tweet
 
-class MongoForEachWriter extends ForeachWriter[Row] {
+import scala.collection.mutable
+import scala.util.{Failure, Success}
+
+class MongoForEachWriter extends ForeachWriter[Row] with Logging {
+  var tweetList: mutable.ArrayBuffer[Row] = _
+
   override def open(partitionId: Long, version: Long): Boolean = {
+    tweetList = new mutable.ArrayBuffer[Row]()
     true
   }
 
   override def process(value: Row): Unit = {
-    val tweet: Tweet = Tweet.createTweetFromRow(value)
-    TweetService.InsertOne(tweet)
+    tweetList.append(value)
   }
 
   override def close(errorOrNull: Throwable): Unit = {
-    // do nothing
+    if (tweetList.nonEmpty) {
+      val tweets = tweetList.map(row => Tweet.createTweetFromRow(row)).toList
+      tweets.foreach(tweet =>
+        TweetService.InsertOne(tweet).onComplete{
+          case Success(value) => log.info("Insert Tweet into DB")
+          case Failure(exception) => log.warn("Can not perform inserting into DB" + exception.toString)
+        }
+      )
+    }
   }
 }
