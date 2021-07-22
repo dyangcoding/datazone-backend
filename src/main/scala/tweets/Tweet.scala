@@ -650,22 +650,23 @@ case object Tweet {
     }
   }
 
+  // TODO Test
   def createTweetFromRow(row: Row): Tweet = {
     Tweet(
-      id = row.getString(0),
-      text = row.getString(1),
-      createdAt = Some(row.getString(2)),
-      author = createUser(Some(row.get(3).asInstanceOf[Row])),
-      inReplyToUserId = Some(row.get(4).asInstanceOf[String]),
-      publicMetrics = createPublicMetrics(Some(row.get(5).asInstanceOf[Row])),
-      nonPublicMetrics = createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row])),
-      context = createContext(Some(row.get(7).asInstanceOf[Row])),
-      entities = createEntities(Some(row.get(8).asInstanceOf[Row])),
-      mentionedUsers = createMentionedUsers(Some(row.getSeq[Row](9))),
-      matchingRules = createMatchingRules(Some(row.getSeq[Row](10))),
-      conversationId = Some(row.get(11).asInstanceOf[String]),
-      source = Some(row.get(12).asInstanceOf[String]),
-      lang = Some(row.get(13).asInstanceOf[String])
+      id =                if (row.get(0) != null) row.getString(0) else "ID NOT EXISTS",
+      text =              if (row.get(1) != null) row.getString(1) else "TEXT NOT EXISTS",
+      createdAt =         if (row.get(2) != null) Some(row.getString(2)) else None,
+      author =            createUser(Some(row.get(3).asInstanceOf[Row])),
+      inReplyToUserId =   if (row.get(4) != null) Some(row.getString(4)) else None,
+      publicMetrics =     createPublicMetrics(Some(row.get(5).asInstanceOf[Row])),
+      nonPublicMetrics =  createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row])),
+      context =           createContext(Some(row.get(7).asInstanceOf[Row])),
+      entities =          createEntities(Some(row.get(8).asInstanceOf[Row])),
+      mentionedUsers =    createMentionedUsers(if (row.get(9) != null) Some(row.getSeq[Row](9)) else None),
+      matchingRules =     createMatchingRules(if (row.get(10) != null) Some(row.getSeq[Row](10)) else None),
+      conversationId =    if (row.get(11) != null) Some(row.getString(11)) else None,
+      source =            if (row.get(12) != null) Some(row.getString(12)) else None,
+      lang =              if (row.get(13) != null) Some(row.getString(13)) else None
     )
   }
 
@@ -673,16 +674,16 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(User(
-          id = value.getString(0),
-          name = value.getString(1),
-          username = value.getString(2),
-          createdAt = value.getString(3),
-          description = Some(value.get(4).asInstanceOf[String]),
-          location = Some(value.get(5).asInstanceOf[String]),
-          profileImageUrl = Some(value.get(6).asInstanceOf[String]),
-          metrics = createUserMetrics(Some(value.get(7).asInstanceOf[Row])),
-          url = Some(value.get(8).asInstanceOf[String]),
-          verified =value.getBoolean(9)
+          id              = if (value.get(0) != null) value.getString(0) else "USER ID NOT EXISTS",
+          name            = if (value.get(1) != null) value.getString(1) else "USER NAME NOT EXISTS",
+          username        = if (value.get(2) != null) value.getString(2) else "USERNAME NOT EXISTS",
+          createdAt       = if (value.get(3) != null) value.getString(3) else "USER CREATEDAT NOT EXISTS",
+          description     = if (value.get(4) != null) Some(value.getString(4)) else None,
+          location        = if (value.get(5) != null) Some(value.getString(5)) else None,
+          profileImageUrl = if (value.get(6) != null) Some(value.getString(6)) else None,
+          metrics         = createUserMetrics(Some(value.get(7).asInstanceOf[Row])),
+          url             = if (value.get(8) != null) Some(value.getString(8)) else None,
+          verified        = if (value.get(9) != null) value.getBoolean(9) else false
         ))
       case _ => None
     }
@@ -692,10 +693,10 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(PublicMetrics(
-          retweetCount = value.getInt(0),
-          replyCount = value.getInt(1),
-          likeCount = value.getInt(2),
-          quoteCount = value.getInt(3)
+          retweetCount = if (value.get(0) != null) value.getInt(0) else 0,
+          replyCount =   if (value.get(1) != null) value.getInt(1) else 0,
+          likeCount =    if (value.get(2) != null) value.getInt(2) else 0,
+          quoteCount =   if (value.get(3) != null) value.getInt(3) else 0
         ))
       case _ => None
     }
@@ -705,9 +706,9 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(NonPublicMetrics(
-          impressionCount = value.getInt(0),
-          urlLinkClicks = value.getInt(1),
-          userProfileClicks = value.getInt(2)
+          impressionCount =   if (value.get(0) != null) value.getInt(0) else 0,
+          urlLinkClicks =     if (value.get(1) != null) value.getInt(1) else 0,
+          userProfileClicks = if (value.get(2) != null) value.getInt(2) else 0
         ))
       case _ => None
     }
@@ -716,12 +717,14 @@ case object Tweet {
   def createContext(rows: Option[Row]): Option[Context] = {
     rows match {
       case Some(value: Row) =>
-        val domainList: Seq[Domain] = value.getSeq[Domain](0)
-        val entityList: Seq[Entity] = value.getSeq[Entity](1)
+        val domainList: Option[Seq[Domain]] =
+          if (value.get(0) != null) Some(value.getSeq[Domain](0).distinct) else None
+        val entityList: Option[Seq[Entity]] =
+          if (value.get(1) != null) Some(value.getSeq[Entity](1).distinct) else None
         if (domainList.isEmpty && entityList.isEmpty) {
           None
         } else {
-          Some(Context(domain = Some(domainList.distinct), entity = Some(entityList.distinct)))
+          Some(Context(domain = domainList, entity = entityList))
         }
       case _ => None
     }
@@ -731,19 +734,19 @@ case object Tweet {
   {
     rows match {
       case Some(value: Row) =>
-        val hashtags: Option[Seq[String]] = Some(value.getSeq[String](0))
-        val urlRows: Option[Seq[Row]] = Some(value.getSeq[Row](1))
+        val hashtags: Option[Seq[String]] = if (value.get(0) != null) Some(value.getSeq[String](0).distinct) else None
+        val urlRows: Option[Seq[Row]] = if (value.get(1) != null) Some(value.getSeq[Row](1)) else None
         val urls: Option[Seq[Url]] = urlRows match {
           case Some(rows: Seq[Row]) =>
             Some(rows.map(row =>
               Url(url = row.getString(0), expandedUrl = row.getString(1), displayUrl = row.getString(2))
-            ))
+            ).distinct)
           case _ => None
         }
-        if (hashtags.nonEmpty && urls.nonEmpty) {
-          Some(Entities(hashtags = Some(hashtags.get.distinct), mentionedUrls = Some(urls.get.distinct)))
-        } else {
+        if (hashtags.isEmpty && urls.isEmpty) {
           None
+        } else {
+          Some(Entities(hashtags = hashtags, mentionedUrls = urls))
         }
       case _ => None
     }
@@ -761,10 +764,10 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(UserMetrics(
-          followersCount = value.getInt(0),
-          followingCount = value.getInt(1),
-          tweetCount = value.getInt(2),
-          listedCount = value.getInt(3)
+          followersCount = if (value.get(0) != null) value.getInt(0) else 0,
+          followingCount = if (value.get(1) != null) value.getInt(1) else 0,
+          tweetCount = if (value.get(2) != null) value.getInt(2) else 0,
+          listedCount = if (value.get(3) != null) value.getInt(3) else 0
         ))
       case _ => None
     }
@@ -773,7 +776,12 @@ case object Tweet {
   def createMatchingRules(row: Option[Seq[Row]]): Option[Seq[MatchingRule]] = {
     row match {
       case Some(value: Seq[Row]) =>
-        Some(value.map(rule => MatchingRule(id = rule.getString(0), tag = rule.getString(1))))
+        Some(value.map(rule =>
+          MatchingRule(
+            id = if (rule.get(0) != null) rule.getString(0) else "",
+            tag = if (rule.get(1) != null) rule.getString(1) else ""
+          )
+        ).distinct)
       case _ => None
     }
   }
