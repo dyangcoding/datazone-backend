@@ -658,8 +658,8 @@ case object Tweet {
   // TODO Test
   def createTweetFromRow(row: Row): Tweet = {
     Tweet(
-      id =                if (row.get(0) != null) row.getString(0) else "ID NOT EXISTS",
-      text =              if (row.get(1) != null) row.getString(1) else "TEXT NOT EXISTS",
+      id =                if (row.get(0) != null) row.getString(0) else "NO TWEET ID",
+      text =              if (row.get(1) != null) row.getString(1) else "NO TWEET TEXT",
       createdAt =         if (row.get(2) != null) Some(row.getString(2)) else None,
       author =            createUser(Some(row.get(3).asInstanceOf[Row])),
       inReplyToUserId =   if (row.get(4) != null) Some(row.getString(4)) else None,
@@ -679,10 +679,10 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(User(
-          id              = if (value.get(0) != null) value.getString(0) else "USER ID NOT EXISTS",
-          name            = if (value.get(1) != null) value.getString(1) else "USER NAME NOT EXISTS",
-          username        = if (value.get(2) != null) value.getString(2) else "USERNAME NOT EXISTS",
-          createdAt       = if (value.get(3) != null) value.getString(3) else "USER CREATEDAT NOT EXISTS",
+          id              = if (value.get(0) != null) value.getString(0) else "NO USER ID",
+          name            = if (value.get(1) != null) value.getString(1) else "NO USER NAME",
+          username        = if (value.get(2) != null) value.getString(2) else "NO USERNAME",
+          createdAt       = if (value.get(3) != null) value.getString(3) else "NO USER CREATED DATE",
           description     = if (value.get(4) != null) Some(value.getString(4)) else None,
           location        = if (value.get(5) != null) Some(value.getString(5)) else None,
           profileImageUrl = if (value.get(6) != null) Some(value.getString(6)) else None,
@@ -722,14 +722,36 @@ case object Tweet {
   def createContext(rows: Option[Row]): Option[Context] = {
     rows match {
       case Some(value: Row) =>
-        val domainList: Option[Seq[Domain]] =
-          if (value.get(0) != null) Some(value.getSeq[Domain](0).distinct) else None
-        val entityList: Option[Seq[Entity]] =
-          if (value.get(1) != null) Some(value.getSeq[Entity](1).distinct) else None
+        val domainList: Option[Seq[Row]] =
+          if (value.get(0) != null) Some(value.getSeq[Row](0).distinct) else None
+        val entityList: Option[Seq[Row]] =
+          if (value.get(1) != null) Some(value.getSeq[Row](1).distinct) else None
         if (domainList.isEmpty && entityList.isEmpty) {
           None
         } else {
-          Some(Context(domain = domainList, entity = entityList))
+          val domains: Option[Seq[Domain]] = domainList match {
+            case Some(rows: Seq[Row]) =>
+              Some(rows.map(row =>
+                Domain(
+                  id          = if (row.get(0) != null) row.getString(0) else "NO DOMAIN ID",
+                  name        = if (row.get(1) != null) row.getString(1) else "NO DOMAIN NAME",
+                  description = if (row.get(2) != null) row.getString(2) else "No DOMAIN DESCRIPTION"
+                )
+              ).distinct)
+            case  _ => None
+          }
+          val entities: Option[Seq[Entity]] = entityList match {
+            case Some(rows: Seq[Row]) =>
+              Some(rows.map(row =>
+                Entity(
+                  id          = if (row.get(0) != null) row.getString(0) else "NO ENTITY ID",
+                  name        = if (row.get(1) != null) row.getString(1) else "NO ENTITY NAME",
+                  description = if (row.get(2) != null) row.getString(2) else "NO ENTITY DESCRIPTION"
+                )
+              ).distinct)
+            case _ => None
+          }
+          Some(Context(domain = domains, entity = entities))
         }
       case _ => None
     }
@@ -744,7 +766,11 @@ case object Tweet {
         val urls: Option[Seq[Url]] = urlRows match {
           case Some(rows: Seq[Row]) =>
             Some(rows.map(row =>
-              Url(url = row.getString(0), expandedUrl = row.getString(1), displayUrl = row.getString(2))
+              Url(
+                url         = if (row.get(0) != null) row.getString(0) else "NO URL",
+                expandedUrl = if (row.get(1) != null) row.getString(1) else "NO EXPANDED URL",
+                displayUrl  = if (row.get(2) != null) row.getString(2) else "NO DISPLAY URL"
+              )
             ).distinct)
           case _ => None
         }
@@ -771,8 +797,8 @@ case object Tweet {
         Some(UserMetrics(
           followersCount = if (value.get(0) != null) value.getInt(0) else 0,
           followingCount = if (value.get(1) != null) value.getInt(1) else 0,
-          tweetCount = if (value.get(2) != null) value.getInt(2) else 0,
-          listedCount = if (value.get(3) != null) value.getInt(3) else 0
+          tweetCount     = if (value.get(2) != null) value.getInt(2) else 0,
+          listedCount    = if (value.get(3) != null) value.getInt(3) else 0
         ))
       case _ => None
     }
@@ -783,7 +809,7 @@ case object Tweet {
       case Some(value: Seq[Row]) =>
         Some(value.map(rule =>
           MatchingRule(
-            id = if (rule.get(0) != null) rule.getString(0) else "",
+            id =  if (rule.get(0) != null) rule.getString(0) else "",
             tag = if (rule.get(1) != null) rule.getString(1) else ""
           )
         ).distinct)
