@@ -37,7 +37,12 @@ case object Context {
 /*
   represents user metrics and contains details about activity for this user
  */
-case class UserMetrics(followersCount: Int, followingCount: Int, tweetCount: Int, listedCount: Int)
+case class UserMetrics(followersCount: Int = 0, followingCount: Int = 0, tweetCount: Int = 0, listedCount: Int = 0) {
+  require(followersCount >= 0, "An User can not have negative followers")
+  require(followingCount >= 0, "An User can not have negative following Users")
+  require(tweetCount     >= 0, "An User can not have negative tweets")
+  require(listedCount    >= 0, "An User can at least not be listed")
+}
 
 case object UserMetrics {
   implicit val userMetrics: BSONDocumentHandler[UserMetrics] = Macros.handler[UserMetrics]
@@ -93,13 +98,22 @@ case object Entities {
 /*
  	Public engagement metrics for the Tweet at the time of the request, use this to measure Tweet engagement
  */
-case class PublicMetrics(retweetCount: Int, replyCount: Int, likeCount: Int, quoteCount: Int)
+case class PublicMetrics(retweetCount: Int = 0, replyCount: Int = 0, likeCount: Int = 0, quoteCount: Int = 0) {
+  require(retweetCount >= 0, "A Tweet can at least be retweeted zero times")
+  require(replyCount   >= 0, "A Tweet can at least have zero replies")
+  require(likeCount    >= 0, "A Tweet can at least have zero likes")
+  require(quoteCount   >= 0, "A Tweet can at least have zero quotes")
+}
 
 case object PublicMetrics {
   implicit val publicMetricsHandler: BSONDocumentHandler[PublicMetrics] = Macros.handler[PublicMetrics]
 }
 
-case class NonPublicMetrics(impressionCount: Int, urlLinkClicks: Int, userProfileClicks: Int)
+case class NonPublicMetrics(impressionCount: Int = 0, urlLinkClicks: Int = 0, userProfileClicks: Int = 0) {
+  require(impressionCount   >= 0, "A Tweet's Impression Count can not be negative")
+  require(urlLinkClicks     >= 0, "A Tweet's url link click Count can not be negative")
+  require(userProfileClicks >= 0, "User Profile Click Count can not be negative")
+}
 
 case object NonPublicMetrics {
   implicit val nonPublicMetricsHandler: BSONDocumentHandler[NonPublicMetrics] = Macros.handler[NonPublicMetrics]
