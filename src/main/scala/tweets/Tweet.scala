@@ -121,7 +121,7 @@ case object NonPublicMetrics {
 
 /*
  A help class to avoid abusing the class "Rule" which in this case will only contains id and text,
- the other 18 attributes are unset.
+ the other attributes are unset.
  */
 case class MatchingRule(id: String, tag: String)
 
@@ -160,7 +160,7 @@ case class Tweet(
 
 case object Tweet {
   /*
-    build a Tweet Object form the JSON Object contains data, includes, matching_rules as object
+    build a Tweet Object form the JSON Object contains data, includes, matching_rules as a nested sub object
     {
       "data": {},
       "includes": {},
@@ -524,16 +524,16 @@ case object Tweet {
 
   def extractDomain(domain: Map[String, Any]): Domain = {
     Domain(
-      id = domain.getOrElse("id", "").toString,
-      name = domain.getOrElse("name", "").toString,
+      id          = domain.getOrElse("id", "").toString,
+      name        = domain.getOrElse("name", "").toString,
       description = domain.getOrElse("description", "").toString
     )
   }
 
   def extractEntity(entity: Map[String, Any]): Entity = {
     Entity(
-      id = entity.getOrElse("id", "").toString,
-      name = entity.getOrElse("name", "").toString,
+      id          = entity.getOrElse("id", "").toString,
+      name        = entity.getOrElse("name", "").toString,
       description = entity.getOrElse("description", "").toString
     )
   }
@@ -564,16 +564,16 @@ case object Tweet {
         userMap.distinct.flatMap(user =>
           List(
             User(
-              id = user.getOrElse("id", "").toString,
-              name = user.getOrElse("name", "").toString,
-              username = user.getOrElse("username", "").toString,
-              createdAt = user.getOrElse("created_at", "").toString,
-              description = user.get("description").asInstanceOf[Option[String]],
-              location = user.get("location").asInstanceOf[Option[String]],
+              id              = user.getOrElse("id", "").toString,
+              name            = user.getOrElse("name", "").toString,
+              username        = user.getOrElse("username", "").toString,
+              createdAt       = user.getOrElse("created_at", "").toString,
+              description     = user.get("description").asInstanceOf[Option[String]],
+              location        = user.get("location").asInstanceOf[Option[String]],
               profileImageUrl = user.get("profile_image_url").asInstanceOf[Option[String]],
-              metrics = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
-              url = user.get("url").asInstanceOf[Option[String]],
-              verified = user.getOrElse("verified", false).asInstanceOf[Boolean])
+              metrics         = extractUserMetrics(user.getOrElse("public_metrics", Map()).asInstanceOf[Map[String, Any]]),
+              url             = user.get("url").asInstanceOf[Option[String]],
+              verified        = user.getOrElse("verified", false).asInstanceOf[Boolean])
             )
           )
         )
@@ -588,8 +588,8 @@ case object Tweet {
         UserMetrics(
           followersCount = metrics.getOrElse("followers_count", 0).asInstanceOf[Int],
           followingCount = metrics.getOrElse("following_count", 0).asInstanceOf[Int],
-          tweetCount = metrics.getOrElse("tweet_count", 0).asInstanceOf[Int],
-          listedCount = metrics.getOrElse("listed_count", 0).asInstanceOf[Int]
+          tweetCount     = metrics.getOrElse("tweet_count", 0).asInstanceOf[Int],
+          listedCount    = metrics.getOrElse("listed_count", 0).asInstanceOf[Int]
         )
       )
     }
