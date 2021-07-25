@@ -232,7 +232,7 @@ case object Tweet {
   private def applyCreatedAt(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
      dataMap.get("created_at") match {
       case Some(createdAt: String) =>
-        Some(Tweet(id = tweet.id, text = tweet.text, createdAt = Some(createdAt)))
+        Some(tweet.copy(createdAt = Some(createdAt)))
       case _ => Some(tweet)
     }
   }
@@ -241,12 +241,7 @@ case object Tweet {
   private def applyReplyToUserId(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     dataMap.get("in_reply_to_user_id") match {
       case Some(replyToUserId: String) =>
-        Some(Tweet(
-          id = tweet.id,
-          text = tweet.text,
-          createdAt = tweet.createdAt,
-          inReplyToUserId = Some(replyToUserId)
-        ))
+        Some(tweet.copy(inReplyToUserId = Some(replyToUserId)))
       case _ => Some(tweet)
     }
   }
@@ -255,13 +250,7 @@ case object Tweet {
   private def applyConversationId(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     dataMap.get("conversation_id") match {
       case Some(conversationId: String) =>
-        Some(Tweet(
-          id = tweet.id,
-          text = tweet.text,
-          createdAt = tweet.createdAt,
-          inReplyToUserId = tweet.inReplyToUserId,
-          conversationId = Some(conversationId)
-        ))
+        Some(tweet.copy(conversationId = Some(conversationId)))
       case _ => Some(tweet)
     }
   }
@@ -270,14 +259,7 @@ case object Tweet {
   private def applySource(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     dataMap.get("source") match {
       case Some(source: String) =>
-        Some(Tweet(
-          id = tweet.id,
-          text = tweet.text,
-          createdAt = tweet.createdAt,
-          inReplyToUserId = tweet.inReplyToUserId,
-          conversationId = tweet.conversationId,
-          source = Some(source)
-        ))
+        Some(tweet.copy(source = Some(source)))
       case _ => Some(tweet)
     }
   }
@@ -286,15 +268,7 @@ case object Tweet {
   private def applyLanguage(tweet: Tweet, dataMap: Map[String, Any]): Option[Tweet] = {
     dataMap.get("lang") match {
       case Some(lang: String) =>
-        Some(Tweet(
-          id = tweet.id,
-          text = tweet.text,
-          createdAt = tweet.createdAt,
-          inReplyToUserId = tweet.inReplyToUserId,
-          conversationId = tweet.conversationId,
-          source = tweet.source,
-          lang = Some(lang)
-        ))
+        Some(tweet.copy(lang = Some(lang)))
       case _ => Some(tweet)
     }
   }
@@ -318,41 +292,11 @@ case object Tweet {
   }
 
   def applyPublicMetrics(tweet: Tweet, metrics: Map[String, Any]): Option[Tweet] = {
-    Some(Tweet(
-      id=tweet.id,
-      text=tweet.text,
-      createdAt=tweet.createdAt,
-      author=tweet.author,
-      inReplyToUserId=tweet.inReplyToUserId,
-      publicMetrics=extractPublicMetrics(metrics),
-      nonPublicMetrics=tweet.nonPublicMetrics,
-      context=tweet.context,
-      entities=tweet.entities,
-      mentionedUsers=tweet.mentionedUsers,
-      matchingRules=tweet.matchingRules,
-      conversationId=tweet.conversationId,
-      source=tweet.source,
-      lang=tweet.lang
-    ))
+    Some(tweet.copy(publicMetrics = extractPublicMetrics(metrics)))
   }
 
   def applyNonPublicMetrics(tweet: Tweet, metrics: Map[String, Any]): Option[Tweet] = {
-    Some(Tweet(
-      id=tweet.id,
-      text=tweet.text,
-      createdAt=tweet.createdAt,
-      author=tweet.author,
-      inReplyToUserId=tweet.inReplyToUserId,
-      publicMetrics=tweet.publicMetrics,
-      nonPublicMetrics=extractNonPublicMetrics(metrics),
-      context=tweet.context,
-      entities=tweet.entities,
-      mentionedUsers=tweet.mentionedUsers,
-      matchingRules=tweet.matchingRules,
-      conversationId=tweet.conversationId,
-      source=tweet.source,
-      lang=tweet.lang
-    ))
+    Some(tweet.copy(nonPublicMetrics = extractNonPublicMetrics(metrics)))
   }
 
   def extractPublicMetrics(metrics: Map[String, Any]): Option[PublicMetrics] = {
@@ -376,22 +320,7 @@ case object Tweet {
     val context: Option[Context] = extractContext(data.getOrElse("context_annotations", List()).asInstanceOf[List[Map[String, Any]]])
     context match {
       case Some(_: Context) =>
-        Some(Tweet(
-          id=tweet.id,
-          text=tweet.text,
-          createdAt=tweet.createdAt,
-          author=tweet.author,
-          inReplyToUserId=tweet.inReplyToUserId,
-          publicMetrics=tweet.publicMetrics,
-          nonPublicMetrics=tweet.nonPublicMetrics,
-          context=context,
-          entities=tweet.entities,
-          mentionedUsers=tweet.mentionedUsers,
-          matchingRules=tweet.matchingRules,
-          conversationId=tweet.conversationId,
-          source=tweet.source,
-          lang=tweet.lang
-        ))
+        Some(tweet.copy(context = context))
       case _ => Some(tweet)
     }
   }
@@ -400,22 +329,7 @@ case object Tweet {
     val entities: Option[Entities] = extractEntities(dataMap.getOrElse("entities", Map()).asInstanceOf[Map[String, Any]])
     entities match {
       case Some(_: Entities) =>
-        Some(Tweet(
-          id=tweet.id,
-          text=tweet.text,
-          createdAt=tweet.createdAt,
-          author=tweet.author,
-          inReplyToUserId=tweet.inReplyToUserId,
-          publicMetrics=tweet.publicMetrics,
-          nonPublicMetrics=tweet.nonPublicMetrics,
-          context=tweet.context,
-          entities=entities,
-          mentionedUsers=tweet.mentionedUsers,
-          matchingRules=tweet.matchingRules,
-          conversationId=tweet.conversationId,
-          source=tweet.source,
-          lang=tweet.lang
-        ))
+        Some(tweet.copy(entities = entities))
       case _ => Some(tweet)
     }
   }
@@ -428,22 +342,7 @@ case object Tweet {
     dataMap.get("author_id") match {
       case Some(authorId: String) =>
         val author = extractAuthor(authorId, userMap)
-        Some(Tweet(
-          id = tweet.id,
-          text = tweet.text,
-          createdAt = tweet.createdAt,
-          author = author,
-          inReplyToUserId = tweet.inReplyToUserId,
-          publicMetrics = tweet.publicMetrics,
-          nonPublicMetrics = tweet.nonPublicMetrics,
-          context = tweet.context,
-          entities = tweet.entities,
-          mentionedUsers = tweet.mentionedUsers,
-          matchingRules = tweet.matchingRules,
-          source = tweet.source,
-          conversationId = tweet.conversationId,
-          lang = tweet.lang
-        ))
+        Some(tweet.copy(author = author))
       case _ => Some(tweet)
     }
   }
@@ -461,22 +360,7 @@ case object Tweet {
     val userMap: List[Map[String, Any]] = includesMap.getOrElse("users", List()).asInstanceOf[List[Map[String, Any]]]
     if (userMap.nonEmpty) {
       val mentionedUsers = extractMentionedUsers(tweet.author, extractUsers(userMap))
-      Some(Tweet(
-        id=tweet.id,
-        text=tweet.text,
-        createdAt=tweet.createdAt,
-        author=tweet.author,
-        inReplyToUserId=tweet.inReplyToUserId,
-        publicMetrics=tweet.publicMetrics,
-        nonPublicMetrics=tweet.nonPublicMetrics,
-        context=tweet.context,
-        entities=tweet.entities,
-        mentionedUsers=mentionedUsers,
-        matchingRules=tweet.matchingRules,
-        conversationId=tweet.conversationId,
-        source=tweet.source,
-        lang=tweet.lang
-      ))
+      Some(tweet.copy(mentionedUsers = mentionedUsers))
     } else {
       Some(tweet)
     }
@@ -485,20 +369,7 @@ case object Tweet {
   def applyMatchingRules(tweet: Option[Tweet], ruleMap: List[Map[String, Any]]): Option[Tweet] = {
     extractRules(ruleMap) match {
       case Some(rules: Seq[MatchingRule]) =>
-        Some(Tweet(
-          id=tweet.get.id,
-          text=tweet.get.text,
-          createdAt=tweet.get.createdAt,
-          author=tweet.get.author,
-          inReplyToUserId=tweet.get.inReplyToUserId,
-          publicMetrics=tweet.get.publicMetrics,
-          nonPublicMetrics=tweet.get.nonPublicMetrics,
-          context=tweet.get.context,
-          entities=tweet.get.entities,
-          matchingRules=Some(rules),
-          conversationId=tweet.get.conversationId,
-          source=tweet.get.source,
-          lang=tweet.get.lang))
+        tweet.flatMap(tweet => Some(tweet.copy(matchingRules = Some(rules))))
       case _ => tweet
     }
   }
