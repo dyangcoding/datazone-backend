@@ -21,7 +21,7 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
                 context:         Option[String]      =None, // matches Tweets with a specific domain id and/or domain id
                 entity:          Option[String]      =None, // matches Tweets with a specific entity string value
                 conversationId:  Option[String]      =None, // matches Tweets that share a common conversation ID
-                tags:            Option[String]      =None, // could be utilised for sorting rule, for now just a simple string
+                tag:             Option[String]      =None, // could be utilised for sorting rule, for now just a simple string
                 options:         Option[RuleOptions] =None
 ){
   // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
