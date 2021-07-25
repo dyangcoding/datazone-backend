@@ -1,4 +1,4 @@
-package test
+package test.tweets
 
 import org.scalatest.funsuite.AnyFunSuite
 

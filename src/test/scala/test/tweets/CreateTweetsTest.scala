@@ -1,10 +1,9 @@
-package test
+package test.tweets
 
 import org.scalatest.funsuite.AnyFunSuite
 import tweets.Tweet
-import utils.JSONParser
 
-class CreateTweetsTest extends AnyFunSuite{
+class CreateTweetsTest extends AnyFunSuite {
   val nonValidateJson: String =
     """
       |"nonValidateJson": "iaminvalidateJSONDATA"

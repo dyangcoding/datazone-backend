@@ -1,4 +1,4 @@
-package test
+package test.utils
 
 import org.scalatest.funsuite.AnyFunSuite
 import utils.StringUtils._

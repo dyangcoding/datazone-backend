@@ -1,4 +1,4 @@
-package test
+package test.rules
 
 import org.scalatest.funsuite.AnyFunSuite
 import rules.{Rule, RuleOptions}
