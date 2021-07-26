@@ -1,6 +1,7 @@
 package test.utils
 
 import org.scalatest.funsuite.AnyFunSuite
+import utils.FileIO
 import utils.StringUtils._
 
 class StringUtilTest extends AnyFunSuite {
@@ -62,5 +63,9 @@ class StringUtilTest extends AnyFunSuite {
   test("combine group with 'AppendHashtag'") {
     val appendHashtag = AppendHashtag("(hashtag -is:retweet)")
     assert(appendHashtag == "#(hashtag -is:retweet)")
+  }
+
+  test("file IO") {
+    println(FileIO.getToken)
   }
 }
