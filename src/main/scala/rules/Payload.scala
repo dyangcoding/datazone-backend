@@ -1,13 +1,34 @@
 package rules
 
+import utils.JSONParser
 import utils.StringUtils.{And, Append, AppendAt, Group}
 
-case class Payload(operation: String, entries: Seq[PayloadEntry]) {
-  // TODO maybe add more constrains Add, Delete see TwitterAPI, later
-  require(operation.nonEmpty && (operation == "add" || operation == "delete"))
-
+/**
+ * represents Payload containing single or multiple PayloadEntry for inserting Rules
+ * @param entries list of PayloadEntry
+ */
+case class AddPayload(entries: Seq[PayloadEntry]) {
   // Standard Account Setting only allows 25 concurrent rules
-  require(entries.length <= 25)
+  require(entries.nonEmpty && entries.length <= 25, "Please specify at least one PayloadEntry and maximal 25 PayloadEntry's.")
+
+  def toJson: String = {
+    val payloadStr = Map("add" -> entries)
+    JSONParser.toJson(payloadStr)
+  }
+}
+
+/**
+ * represents Payload containing single or multiple Rule's Id for deleting Rules
+ * @param entries list of PayloadEntry
+ */
+case class DeletePayload(entries: Seq[String]) {
+  // Standard Account Setting only allows 25 concurrent rules
+  require(entries.nonEmpty, "Please specify at least one Rule Id.")
+
+  def toJson: String = {
+    val payloadStr = Map("delete" -> Map("ids" -> entries))
+    JSONParser.toJson(payloadStr)
+  }
 }
 
 case class PayloadEntry(value: String, tag: Option[String] = None) {
@@ -73,6 +94,7 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
 
   // apply Rule Options
 
+  // TODO: if false war given, it does not mean that the negative case should be applied as rule options
   def applyIsRetweet(isRetweet: Boolean): PayloadEntry = {
     val text = if (isRetweet) "is:retweet" else "-is:retweet"
     this.flatMap(payload => PayloadEntry(And(payload.value, text)))
