@@ -23,8 +23,8 @@ object DataZone {
         implicit val system: ActorSystem[Nothing] = context.system
         implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
-        val buildRuleRepository = context.spawn(RuleRepository(), "RuleRepository")
-        val ruleRoutes = new RuleRoutes(buildRuleRepository)
+        val ruleRepository = context.spawn(RuleRepository(), "RuleRepository")
+        val ruleRoutes = new RuleRoutes(ruleRepository)
 
         val tweetRepository = context.spawn(TweetRepository(), "TweetRepository")
         val tweetRoutes = new TweetRoutes(tweetRepository)

@@ -152,7 +152,7 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
     }
   }
 
-  private def toPayloadInternal: PayloadEntry = {
+  private def toPayloadEntryInternal: PayloadEntry = {
     toBasicPayload
       .flatMap(payload => applyKeyword(payload))
       .flatMap(payload => applyEmoji(payload))
@@ -168,13 +168,12 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
       .flatMap(payload => applyConversationId(payload))
   }
 
-  def toPayload: PayloadEntry = {
-    val result = toPayloadInternal
+  def toPayloadEntry: PayloadEntry = {
     val ruleOptions: RuleOptions = options match {
       case Some(ruleOptions: RuleOptions) => ruleOptions
       case _ => RuleOptions.apply()
     }
-    result.flatMap(payload => ruleOptions.applyOptions(payload))
+    toPayloadEntryInternal.flatMap(payload => ruleOptions.applyOptions(payload))
   }
 }
 
