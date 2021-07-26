@@ -24,6 +24,10 @@ object RulesClient {
    */
   val TWITTER_RULES_ENDPOINT_URL: String = "https://api.twitter.com/2/tweets/search/stream/rules"
 
+  /**
+   * build a basic request with content type and authorization token
+   * @return HttpRequest
+   */
   def baseRequest: HttpRequest = {
     Http(TWITTER_RULES_ENDPOINT_URL)
       .header("content-type", "application/json")
@@ -38,15 +42,18 @@ object RulesClient {
    * @param payload payload for adding rules to a filtered stream
    * @return
    */
-  //TODO handle more error case: exceed limit rate,
   def addRules(payload: String): Future[Rule] = {
-    val response: HttpResponse[String] = baseRequest.postData(payload).asString
-    val responseMap: Map[String, Any] = getResponseMap(response.body)
-    response.code match {
-      case 201 =>
-        parseResult(responseMap)
-      case _ =>
-        throw new Exception(parseErrorMessage(responseMap))
+    try {
+      val response: HttpResponse[String] = baseRequest.postData(payload).asString
+      val responseMap: Map[String, Any] = getResponseMap(response.body)
+      response.code match {
+        case 201 => parseResult(responseMap)
+        case _ =>
+          val message = parseErrorMessage(responseMap)
+          Future { throw new Exception(message) }
+      }
+    } catch {
+      case exception: Exception => Future { throw exception }
     }
   }
 
@@ -79,13 +86,17 @@ object RulesClient {
    * @param deleteJSONPayload payload for delete a rule from a filtered stream.
    */
   def deleteRules(deleteJSONPayload: String): Future[Boolean] = {
-    val response = baseRequest.postData(deleteJSONPayload).asString
-    val responseMap: Map[String, Any] = getResponseMap(response.body)
-    responseMap.getOrElse("errors", None) match {
-      case None => Future { true }
-      case _    =>
-        val message = parseErrorMessage(responseMap)
-        throw new Exception(message)
+    try {
+      val response = baseRequest.postData(deleteJSONPayload).asString
+      val responseMap: Map[String, Any] = getResponseMap(response.body)
+      responseMap.getOrElse("errors", None) match {
+        case None => Future { true }
+        case _    =>
+          val message = parseErrorMessage(responseMap)
+          Future { throw new Exception(message) }
+      }
+    } catch {
+      case exception: Exception => Future { throw exception }
     }
   }
 
@@ -97,7 +108,7 @@ object RulesClient {
   def getResponseMap(response: String): Map[String, Any] = {
     val result: Option[Map[String, Any]] = JSONParser.parseJson(response)
     result match {
-      case Some(data: Map[String, Any]) => data
+      case Some(map: Map[String, Any]) => map
       case None => throw new Exception("Invalid Response Format: can not parse Response to JSON.")
     }
   }
