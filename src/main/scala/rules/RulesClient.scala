@@ -126,7 +126,12 @@ object RulesClient {
       case errors: List[Map[String, Any]] =>
         if (errors.isEmpty) throw new Exception("The error Object is empty.")
         val error = errors.head
-        error.getOrElse("title", "No Error Title could be found!") + ": " + error.getOrElse("detail", "No Error Details!")
+        val message = new StringBuilder
+        val title = error.getOrElse("title", "No Error Title could be found!").asInstanceOf[String]
+        message.append(title).append(": ")
+        val details = error.getOrElse("details", List()).asInstanceOf[List[String]]
+        message.append(details.mkString(" "))
+        message.toString()
       case None => throw new Exception("No Error Object could be found.")
     }
   }
