@@ -44,4 +44,10 @@ object RuleService {
   def DeleteOne(rule: Rule): Future[WriteResult] = {
     collection.flatMap(_.delete.one(rule))
   }
+
+  def DeleteById(twitterGenId: String): Future[WriteResult] = {
+    collection.flatMap(_.delete.one(
+      q = BSONDocument("twitterGenId" -> twitterGenId)
+    ))
+  }
 }

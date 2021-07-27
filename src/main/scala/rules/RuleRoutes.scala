@@ -9,8 +9,10 @@ import utils.JSONParser
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
-class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit system: ActorSystem[_]) extends JsonSupport{
+class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit system: ActorSystem[_]) extends JsonSupport{
   import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 
   // asking someone requires a timeout and a scheduler, if the timeout hits without response
@@ -20,39 +22,53 @@ class RuleRoutes(buildRuleRepository: ActorRef[RuleRepository.Command])(implicit
   lazy val routes: Route = {
     concat(
       get {
-        val fetchRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.FetchRules)
+        /**
+         * no need to fetch all Rules from the Twitter API
+         *  -- whenever Rules get updated (added or deleted), database would also get updated as a side effect
+         *  -- Twitter API contains all Rules with ID, Value (Rule as string payload), Tag,
+         *      which do not match the Rules that are stored within the database
+         */
+        val fetchRules: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.FetchRules)
         onSuccess(fetchRules) {
-          case RuleRepository.ActionSucceededMany(results) => complete(JSONParser.toJson(results))
-          case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+          case RuleRepository.MultiActionsSucceeded(results) => complete(StatusCodes.OK -> JSONParser.toJson(results))
+          case RuleRepository.MultiActionsFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
         }
       },
       post {
-        entity(as[Rule]) { rule =>
-          val insertedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.AddRule(rule, _))
-          onSuccess(insertedRule) {
-            case RuleRepository.ActionSucceeded(result) => {
-              complete(JSONParser.toJson(result))
-            }
-            case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+        /**
+         * Only add Rule to local database after Rule inserting at Twitter API was succeeded
+         */
+        entity(as[Rule]) { originRule =>
+          val payload: AddPayload = AddPayload(List(originRule.toPayloadEntry))
+          val addingRule: Future[Rule] = for (rule <- RulesClient.addRules(payload.toJson)) yield rule
+          onComplete(addingRule) {
+            case Success(rule: Rule) =>
+              val ruleWithTwitterId = originRule.copy(twitterGenId = rule.twitterGenId, tag = rule.tag)
+              val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(ruleWithTwitterId, _))
+              onSuccess(insertedRule) {
+                case RuleRepository.SingleActionSucceeded(result) => complete(StatusCodes.Created -> JSONParser.toJson(result))
+                case RuleRepository.SingleActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+              }
+            case Failure(exception) => complete(StatusCodes.BadRequest -> exception.getMessage)
           }
         }
       },
-      put {
-        entity(as[Rule]) { rule =>
-          val updatedRule: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.UpdateRule(rule, _))
-          onSuccess(updatedRule) {
-            case RuleRepository.ActionSucceeded(result) => {
-              complete(JSONParser.toJson(result))
+
+      /**
+       * note that the id generated from Mongo can not be identified within Twitter API,
+       * so the Id here referred to the twitterGenId
+       */
+      (delete & path(LongNumber)) { id =>
+        val payload: DeletePayload = DeletePayload(List(id.toString))
+        val deletingRule: Future[Boolean] = for (rule <- RulesClient.deleteRules(payload.toJson)) yield rule
+        onComplete(deletingRule) {
+          case Success(_: Boolean) =>
+            val deletedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.DeleteRuleById(id.toString, _))
+            onSuccess(deletedRule) {
+              case RuleRepository.ActionSucceeded() => complete(StatusCodes.OK)
+              case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
             }
-            case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
-          }
-        }
-      },
-      delete {
-        val clearRules: Future[RuleRepository.Response] = buildRuleRepository.ask(RuleRepository.ClearRules)
-        onSuccess(clearRules) {
-          case RuleRepository.ActionSucceeded(result) => complete(JSONParser.toJson(result))
-          case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+          case Failure(exception) => complete(StatusCodes.BadRequest -> exception.getMessage)
         }
       },
     )
