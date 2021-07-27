@@ -20,8 +20,8 @@ class TweetRoutes(tweetRepository: ActorRef[TweetRepository.Command])(implicit s
     get {
       val fetchTweets: Future[TweetRepository.Response] = tweetRepository.ask(TweetRepository.FetchTweets)
       onSuccess(fetchTweets) {
-        case TweetRepository.ActionSucceededMany(results) => complete(JSONParser.toJson(results))
-        case TweetRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+        case TweetRepository.MultiActionsSucceeded(results) => complete(StatusCodes.OK -> JSONParser.toJson(results))
+        case TweetRepository.MultiActionaFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
       }
     }
   }

@@ -11,8 +11,8 @@ object TweetRepository {
   // Trait defining successful and failure responses
   sealed trait Response
 
-  final case class ActionSucceededMany(results: Seq[Tweet]) extends Response
-  final case class ActionFailed(reason: String) extends Response
+  final case class MultiActionsSucceeded(results: Seq[Tweet]) extends Response
+  final case class MultiActionaFailed(reason: String) extends Response
 
   // Trait and its implementations representing all possible messages that can be sent to this Behavior
   sealed trait Command
@@ -24,9 +24,9 @@ object TweetRepository {
     case FetchTweets(replyTo) =>
       TweetService.FetchAll().onComplete{
         case Success(writeResult) =>
-          replyTo ! ActionSucceededMany(writeResult)
+          replyTo ! MultiActionsSucceeded(writeResult)
         case Failure(exception) =>
-          replyTo ! ActionFailed(exception.toString)
+          replyTo ! MultiActionaFailed(exception.toString)
       }
       Behaviors.same
   }

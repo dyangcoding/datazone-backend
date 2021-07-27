@@ -26,8 +26,8 @@ class MongoForEachWriter extends ForeachWriter[Row] with Logging {
       val tweets = tweetList.map(row => Tweet.createTweetFromRow(row)).toList
       tweets.foreach(tweet =>
         TweetService.InsertOne(tweet).onComplete{
-          case Success(value) => log.info("Insert Tweet into DB")
-          case Failure(exception) => log.warn("Can not perform inserting into DB" + exception.toString)
+          case Success(_) => log.info("Insert Tweet into DB")
+          case Failure(exception) => log.warn("Can not perform inserting into DB" + exception.getMessage)
         }
       )
     }
