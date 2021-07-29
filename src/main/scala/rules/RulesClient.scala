@@ -6,6 +6,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import utils.{FileIO, JSONParser}
 
+trait HttpClient {
+  type RequestHandler = String => Future[Map[String, Any]]
+  def requestHandler(payload: String): Future[Map[String, Any]]
+}
+
 /**
  * This Utility provides methods to add, validate, retrieve and delete
  * rules to and from a filtered twitter stream.
@@ -13,7 +18,7 @@ import utils.{FileIO, JSONParser}
  * api/tweets/filtered-stream/introduction
  **/
 
-object RulesClient {
+object RulesClient extends HttpClient {
   val bearerToken: String = FileIO.getToken
   assert(bearerToken.nonEmpty)
 
@@ -35,68 +40,49 @@ object RulesClient {
   }
 
   /**
-   * This method adds rules for a filtered stream.
-   * It sends a POST request with a give JSON payload to the twitter filtered stream rules
-   * endpoint.
-   *
-   * @param payload payload for adding rules to a filtered stream
+   * encapsulate request handling and JSON Object converting as a basic request handler, return exception if
+   * the request can not be performed due to any unknown reasons or have trouble to convert Response Object to JSON
+   * @param payload json payload for modifying rules
    * @return
    */
-  def addRules(payload: String): Future[Rule] = {
-    try {
-      val response: HttpResponse[String] = baseRequest.postData(payload).asString
-      val responseMap: Map[String, Any] = getResponseMap(response.body)
-      response.code match {
-        case 201 => parseResult(responseMap)
-        case _ =>
-          val message = parseErrorMessage(responseMap)
-          Future { throw new Exception(message) }
-      }
-    } catch {
-      case exception: Exception => Future { throw exception }
+  override def requestHandler(payload: String): Future[Map[String, Any]] = {
+    (for {
+      response    <- Future { baseRequest.postData(payload).asString }
+      responseMap <- getResponseMap(response.body)
+    } yield responseMap).recover {
+      case exception: Exception => throw new Exception(exception.getMessage)
     }
   }
 
   /**
-   * returns a Rule Object with the Twitter generated Id for further processing,
-   * in case no data Object could be found, or more than one Rule related Object were found,
-   * or no id was returned, returns error
-   * @param result response data returned from Twitter API
-   * @return a Rule Object with the Twitter generated Id
+   * add rules for a filtered stream, if any of the following occurs, return a exception
+   * if no Rule Object can be returned or error occurs
+   * @param addPayload payload for adding rules to a filtered stream
+   * @param handler request handler for adding rules, default to the local request handler
+   * @return
    */
-  def parseResult(result: Map[String, Any]): Future[Rule] = {
-    result.getOrElse("data", None) match {
-      case data: List[Map[String, Any]] =>
-        if (data.isEmpty) throw new Exception("The data Object is empty.")
-        if (data.size > 1) throw new Exception("The data object contains more then one values.")
-        val ruleMap = data.head
-        val twitterGenId = ruleMap.getOrElse("id", "").asInstanceOf[String]
-        val tag = ruleMap.getOrElse("tag", "").asInstanceOf[String]
-        if (twitterGenId.isEmpty) throw new Exception("The Response data contains no Id generated from Twitter.")
-        Future { Rule(twitterGenId = Some(twitterGenId), tag = Some(tag)) }
-      case None => throw new Exception("No data Object returned from the Response.")
+  def addRules(addPayload: String, handler: RequestHandler = requestHandler): Future[Rule] = {
+    (for {
+      responseMap <- handler(addPayload)
+      rule        <- parseData(responseMap)
+      _           <- parseError(responseMap)
+    } yield rule).recover {
+      case exception: Exception => throw new Exception(exception.getMessage)
     }
   }
 
   /**
-   * This method removes rules for a filtered stream, Twitter API responses with code 200,
-   * even though the Action could not be performed, so we do not rely on the
-   * status code returned for this action
-   *
-   * @param deleteJSONPayload payload for delete a rule from a filtered stream.
+   * delete rules for a filtered stream, if any of following occurs, return a exception
+   * if any error occur
+   * @param deletePayload payload for delete a rule from a filtered stream.
+   * @param handler request handler for deleting rules, default to the local request handler
    */
-  def deleteRules(deleteJSONPayload: String): Future[Boolean] = {
-    try {
-      val response = baseRequest.postData(deleteJSONPayload).asString
-      val responseMap: Map[String, Any] = getResponseMap(response.body)
-      responseMap.getOrElse("errors", None) match {
-        case None => Future { true }
-        case _    =>
-          val message = parseErrorMessage(responseMap)
-          Future { throw new Exception(message) }
-      }
-    } catch {
-      case exception: Exception => Future { throw exception }
+  def deleteRules(deletePayload: String, handler: RequestHandler = requestHandler): Future[Boolean] = {
+    (for {
+      responseMap <- handler(deletePayload)
+      _           <- parseError(responseMap)
+    } yield true).recover {
+      case exception: Exception => throw new Exception(exception.getMessage)
     }
   }
 
@@ -105,34 +91,51 @@ object RulesClient {
    * @param response response as a String
    * @return
    */
-  def getResponseMap(response: String): Map[String, Any] = {
+  def getResponseMap(response: String): Future[Map[String, Any]] = {
     val result: Option[Map[String, Any]] = JSONParser.parseJson(response)
     result match {
-      case Some(map: Map[String, Any]) => map
-      case None => throw new Exception("Invalid Response Format: can not parse Response to JSON.")
+      case Some(map: Map[String, Any]) => Future { map }
+      case None => Future { throw new Exception("Invalid Response Format: can not parse Response to JSON.") }
     }
   }
 
   /**
-   *  returns a well formatted error message containing error title and error details
-   *  throws a Exception if
-   *   -- error list is empty
-   *   -- no error object is presents
-   * @param result result as a Map
+   * returns a Rule Object with the Twitter generated Id, in case
+   *  -- no data Object could be found
+   *  -- more than one Rule related Object were found
+   *  -- no id was returned
+   *  returns a specified Exception
+   * @param result response data returned from Twitter API
+   * @return a Rule Object with the Twitter generated Id
+   */
+  def parseData(result: Map[String, Any]): Future[Rule] = {
+    result.getOrElse("data", None) match {
+      case data: List[Map[String, Any]] =>
+        if (data.isEmpty) Future.failed(new Exception("The data Object is empty."))
+        if (data.size > 1) Future.failed(new Exception("The data object contains more then one values."))
+        val twitterGenId = data.head.getOrElse("id", "").asInstanceOf[String]
+        val tag = data.head.getOrElse("tag", "").asInstanceOf[String]
+        if (twitterGenId.isEmpty) Future.failed(new Exception("The Response data contains no Id generated from Twitter."))
+        Future { Rule(twitterGenId = Some(twitterGenId), tag = Some(tag)) }
+      case None => Future.failed(throw new Exception("No data Object returned from the Response."))
+    }
+  }
+
+  /**
+   * returns a well formatted error message containing error title and error details if any error occurs
+   * @param errorMap response Map
    * @return
    */
-  def parseErrorMessage(result: Map[String, Any]): String = {
-    result.getOrElse("errors", None) match {
+  def parseError(errorMap: Map[String, Any]): Future[String] = {
+    errorMap.getOrElse("errors", None) match {
       case errors: List[Map[String, Any]] =>
-        if (errors.isEmpty) throw new Exception("The error Object is empty.")
-        val error = errors.head
-        val message = new StringBuilder
-        val title = error.getOrElse("title", "No Error Title could be found!").asInstanceOf[String]
-        message.append(title).append(": ")
-        val details = error.getOrElse("details", List()).asInstanceOf[List[String]]
-        message.append(details.mkString(" "))
-        message.toString()
-      case None => throw new Exception("No Error Object could be found.")
+        if (errors.isEmpty) Future {""}
+        val title = errors.head.getOrElse("title", "No Error Title could be found!").asInstanceOf[String]
+        val details = errors.head.getOrElse("details", List()).asInstanceOf[List[String]]
+        Future.failed(
+          new Exception(new StringBuilder(title).append(": ").append(details.mkString(" ")).toString())
+        )
+      case None => Future {""}
     }
   }
 }
