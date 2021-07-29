@@ -35,6 +35,6 @@ libraryDependencies ++= Seq(
 
   // tests
   "org.scalactic" %% "scalactic" % "3.2.5",
-  "org.scalamock" %% "scalamock" % "5.1.0" % "test",
-  "org.scalatest" %% "scalatest" % "3.2.5" % "test",
+  "org.scalatest" %% "scalatest" % "3.2.5",
+  "org.mockito" %% "mockito-scala" % "1.16.37" % "test"
 )
