@@ -52,7 +52,7 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
     this.flatMap(payload => PayloadEntry(And(payload.value, hashtag)))
   }
 
-  def applyUserId(userId: String): PayloadEntry = {
+  def applyUser(userId: String): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(And(payload.value, AppendAt(userId))))
   }
 
@@ -62,6 +62,10 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
 
   def applyToUser(toUser: String): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(And(payload.value, Append("to:", toUser))))
+  }
+
+  def applyRetweetsOfUser(retweetsOfUser: String): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(And(payload.value, Append("retweetOf:", retweetsOfUser))))
   }
 
   def applyEmoji(emoji: String): PayloadEntry = {
@@ -88,8 +92,8 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
     this.flatMap(payload => PayloadEntry(And(payload.value, Append("conversation_id:", conversationId))))
   }
 
-  def applyRetweetsOfUser(retweetsOfUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("retweetOf:", retweetsOfUser))))
+  def applyTag(tagValue: String): PayloadEntry = {
+    this.flatMap(payload => PayloadEntry(payload.value, tag=Option(tagValue)))
   }
 
   // apply Rule Options
@@ -145,9 +149,5 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
 
   def group(): PayloadEntry = {
     this.flatMap(payload => PayloadEntry(Group(payload.value)))
-  }
-
-  def applyTag(tagValue: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(payload.value, tag=Option(tagValue)))
   }
 }

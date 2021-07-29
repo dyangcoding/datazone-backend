@@ -84,7 +84,7 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
 
   private def applyMentionedUserId(payload: PayloadEntry): PayloadEntry = {
     mentionedUserId match {
-      case Some(mentionedUserId: String) => payload.applyUserId(mentionedUserId)
+      case Some(mentionedUserId: String) => payload.applyUser(mentionedUserId)
       case _ => payload
     }
   }
@@ -152,6 +152,13 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
     }
   }
 
+  private def applyTag(payload: PayloadEntry): PayloadEntry = {
+    tag match {
+      case Some(tag: String) => payload.applyTag(tag)
+      case _ => payload
+    }
+  }
+
   private def toPayloadEntryInternal: PayloadEntry = {
     toBasicPayload
       .flatMap(payload => applyKeyword(payload))
@@ -166,6 +173,7 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
       .flatMap(payload => applyContext(payload))
       .flatMap(payload => applyEntity(payload))
       .flatMap(payload => applyConversationId(payload))
+      .flatMap(payload => applyTag(payload))
   }
 
   def toPayloadEntry: PayloadEntry = {
