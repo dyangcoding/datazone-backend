@@ -27,7 +27,7 @@ class MongoForEachWriter extends ForeachWriter[Row] with Logging {
       tweets.foreach(tweet =>
         TweetService.InsertOne(tweet).onComplete{
           case Success(_) => log.info("Insert Tweet into DB")
-          case Failure(exception) => log.warn("Can not perform inserting into DB" + exception.getMessage)
+          case Failure(exception) => log.error("Can not perform inserting into DB, reason: " + exception.toString)
         }
       )
     }

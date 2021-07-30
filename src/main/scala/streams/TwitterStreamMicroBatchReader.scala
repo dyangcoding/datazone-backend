@@ -47,13 +47,13 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
                 data.tweetList.append(t)
                 data.currentOffset = data.currentOffset + 1
                 data.incomingEventCounter = data.incomingEventCounter + 1;
-              case None => println("--No tweet created--123");println(tweet)
+              case None => internalLog("Can not create tweet from Input Source.")
             }
             // 1000 ms no tweet received. this is fine, maybe nobody tweeted that quickly
           }
           else print("-" + queue.size + "-")
         } catch {
-          case e:Exception => println(e.toString)
+          case exception :Exception => internalLog(exception.getMessage)
         }
       }
       println("********************************************************")
