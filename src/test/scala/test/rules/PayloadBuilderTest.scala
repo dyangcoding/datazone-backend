@@ -1,7 +1,7 @@
 package test.rules
 
 import org.scalatest.funsuite.AnyFunSuite
-import rules.{PayloadEntry, Rule}
+import rules.{PayloadEntry, Rule, RuleOptions}
 import utils.JSONParser
 
 class PayloadEntryTest extends AnyFunSuite{
@@ -127,5 +127,23 @@ class PayloadEntryTest extends AnyFunSuite{
         value = " ",
         tag = Some("zQuOndFebzbuBAxHrzsxAEnWtAYqLwlUsnfLXKIIsrDwTrvbYdxlyENUKMRogedUGYTKcuHqSFvDpnryZwQuqdngCZXtYeDXuxiLWwfUXSNzVfkaEmFKcJsNItPKebuRG"))
     }
+  }
+
+  test("negative sample") {
+    assertThrows[Exception](RuleOptions(sample = Some(-10)))
+  }
+
+  test("non validate sample") {
+    assertThrows[Exception](RuleOptions(sample = Some(110)))
+  }
+
+  test("invalidate language") {
+    assertThrows[Exception](RuleOptions(lang = Some("non sense")))
+  }
+
+  test("apply isRetweet") {
+    val payloadEntry = new PayloadEntry(" ")
+    val option = RuleOptions(isRetweet = Some(true))
+    println(option.applyOptions())
   }
 }

@@ -3,9 +3,32 @@ package rules
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import reactivemongo.api.bson.{BSONDocumentHandler, BSONObjectID, Macros}
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, RootJsonFormat, deserializationError}
-import utils.JSONParser
+import utils.{JSONParser, StringUtils}
 
 import scala.util.{Failure, Success}
+
+case class RuleOptions(isRetweet:    Option[Boolean]=None, // match Tweets that are truly retweets
+                       isVerified:   Option[Boolean]=None, // deliver only Tweets whose authors are verified by Twitter
+                       isReply:      Option[Boolean]=None, // deliver only explicit replies that match a rule
+                       hasHashtags:  Option[Boolean]=None, // match Tweets that contain at least one hashtag
+                       hasLinks:     Option[Boolean]=None, // match Tweets which contain links and media in the Tweet body
+                       hasMedia:     Option[Boolean]=None, // match Tweets that contain a media object, such as a photo, GIF, or video, as determined by Twitter
+                       hasImages:    Option[Boolean]=None, // match Tweets that contain a recognized URL to an image
+                       hasVideos:    Option[Boolean]=None, // match Tweets that contain native Twitter videos, uploaded directly to Twitter
+                       lang:         Option[String] =None, // match Tweets that have been classified by Twitter as being of a particular language
+                       sample:       Option[Int]    =None  // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
+                      ) {
+
+  require(sample.isEmpty || sample.forall(sample => sample > 0 && sample <= 100),
+    "Sample must be within the 0 (exclusive) and 100 (inclusive)")
+
+  require(lang.isEmpty || (lang.forall(_.nonEmpty) && StringUtils.langList().contains(lang.toString)),
+    "Language must be one of the currently supported 47 Languages")
+}
+
+case object RuleOptions {
+  implicit val RuleOptionHandler: BSONDocumentHandler[RuleOptions] = Macros.handler[RuleOptions]
+}
 
 case class Rule(_id:             Option[BSONObjectID]=None, // require internal for mongo
                 twitterGenId:    Option[String]      =None, // will be generated once it is verified by the Twitter API and could be utilised to deduplicate objects within DB
@@ -63,126 +86,6 @@ case class Rule(_id:             Option[BSONObjectID]=None, // require internal 
       hashtags.nonEmpty || url.nonEmpty || fromUser.nonEmpty || toUser.nonEmpty ||
       retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty
 
-  // starting point to build a PayloadEntry, note that PayloadEntry requires a non empty value
-  def toBasicPayload: PayloadEntry = PayloadEntry(value = " ")
-
-  private def applyKeyword(payload: PayloadEntry): PayloadEntry = {
-    keyword match {
-      case Some(keyword: String) =>
-        payload.applyKeyword(keyword).group()
-      case _ => payload
-    }
-  }
-
-  private def applyEmoji(payload: PayloadEntry): PayloadEntry = {
-    emoji match {
-      case Some(emoji: String) =>
-        payload.applyEmoji(emoji)
-      case _ => payload
-    }
-  }
-
-  private def applyMentionedUserId(payload: PayloadEntry): PayloadEntry = {
-    mentionedUserId match {
-      case Some(mentionedUserId: String) => payload.applyUser(mentionedUserId)
-      case _ => payload
-    }
-  }
-
-  private def applyPhrase(payload: PayloadEntry): PayloadEntry = {
-    phrase match {
-      case Some(phrase: String) => payload.applyPhrase(phrase)
-      case _ => payload
-    }
-  }
-
-  private def applyHashTags(payload: PayloadEntry): PayloadEntry = {
-    hashtags match {
-      case Some(hashtags: String) => payload.applyHashtag(hashtags)
-      case _ => payload
-    }
-  }
-
-  private def applyUrl(payload: PayloadEntry): PayloadEntry = {
-    url match {
-      case Some(url: String) => payload.applyUrl(url)
-      case _ => payload
-    }
-  }
-
-  private def applyFromUser(payload: PayloadEntry): PayloadEntry = {
-    fromUser match {
-      case Some(fromUser: String) => payload.applyFromUser(fromUser)
-      case _ => payload
-    }
-  }
-
-  private def applyToUser(payload: PayloadEntry): PayloadEntry = {
-    toUser match {
-      case Some(toUser: String) => payload.applyToUser(toUser)
-      case _ => payload
-    }
-  }
-
-  private def applyRetweetsOfUser(payload: PayloadEntry): PayloadEntry = {
-    retweetsOfUser match {
-      case Some(retweetsOfUser: String) => payload.applyRetweetsOfUser(retweetsOfUser)
-      case _ => payload
-    }
-  }
-
-  private def applyContext(payload: PayloadEntry): PayloadEntry = {
-    context match {
-      case Some(context: String) => payload.applyContext(context)
-      case _ => payload
-    }
-  }
-
-  private def applyEntity(payload: PayloadEntry): PayloadEntry = {
-    entity match {
-      case Some(entity: String) => payload.applyEntity(entity)
-      case _ => payload
-    }
-  }
-
-  private def applyConversationId(payload: PayloadEntry): PayloadEntry = {
-    conversationId match {
-      case Some(conversationId: String) => payload.applyConversationId(conversationId)
-      case _ => payload
-    }
-  }
-
-  private def applyTag(payload: PayloadEntry): PayloadEntry = {
-    tag match {
-      case Some(tag: String) => payload.applyTag(tag)
-      case _ => payload
-    }
-  }
-
-  private def toPayloadEntryInternal: PayloadEntry = {
-    toBasicPayload
-      .flatMap(payload => applyKeyword(payload))
-      .flatMap(payload => applyEmoji(payload))
-      .flatMap(payload => applyMentionedUserId(payload))
-      .flatMap(payload => applyPhrase(payload))
-      .flatMap(payload => applyHashTags(payload))
-      .flatMap(payload => applyUrl(payload))
-      .flatMap(payload => applyFromUser(payload))
-      .flatMap(payload => applyToUser(payload))
-      .flatMap(payload => applyRetweetsOfUser(payload))
-      .flatMap(payload => applyContext(payload))
-      .flatMap(payload => applyEntity(payload))
-      .flatMap(payload => applyConversationId(payload))
-      .flatMap(payload => applyTag(payload))
-  }
-
-  def toPayloadEntry: PayloadEntry = {
-    val ruleOptions: RuleOptions = options match {
-      case Some(ruleOptions: RuleOptions) => ruleOptions
-      case _ => RuleOptions.apply()
-    }
-    toPayloadEntryInternal.flatMap(payload => ruleOptions.applyOptions(payload))
-  }
 }
 
 case object Rule {
