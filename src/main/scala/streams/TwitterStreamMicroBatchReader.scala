@@ -1,13 +1,12 @@
 package streams
 
-import db.{RuleService, TweetService}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.sources.v2.DataSourceOptions
 import org.apache.spark.sql.sources.v2.reader.InputPartition
 import org.apache.spark.sql.sources.v2.reader.streaming.{MicroBatchReader, Offset}
 import org.apache.spark.sql.types.StructType
-import tweets.{Tweet, TweetListener, TwitterConnection, TwitterConnectionMock}
+import tweets.{Tweet, TweetListener, TwitterConnection, TwitterConnectionImpl, TwitterConnectionMock}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -41,21 +40,21 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
 
       while (!stopped) {
         try {
-          val tweet:String = queue.poll(100, TimeUnit.MILLISECONDS)
+          val tweet: String = queue.poll(100, TimeUnit.MILLISECONDS)
           if (tweet != null) {
-            val tweetOpt = Tweet.createTweet(tweet)
-            tweetOpt match {
-              case Some(t) => {
-                TweetService.InsertOne(t)
+            Tweet.createTweet(tweet) match {
+              case Some(t) =>
                 data.tweetList.append(t)
                 data.currentOffset = data.currentOffset + 1
                 data.incomingEventCounter = data.incomingEventCounter + 1;
-              }
               case None => println("--No tweet created--123");println(tweet)
             }
             // 1000 ms no tweet received. this is fine, maybe nobody tweeted that quickly
-          } else print("-" + queue.size + "-")
-        } catch { case e:Exception => println(e.toString)}
+          }
+          else print("-" + queue.size + "-")
+        } catch {
+          case e:Exception => println(e.toString)
+        }
       }
       println("********************************************************")
       println("Worker Thread gestoppt")
@@ -78,7 +77,7 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
 
   private var stopped: Boolean = false
 
-  private var worker: workerThread = null
+  private var worker: workerThread = _
 
   private val data: Data = Data.create();
   private var tweetQueue: ArrayBlockingQueue[String] = _
@@ -94,7 +93,7 @@ class TwitterStreamMicroBatchReader(options: DataSourceOptions) extends MicroBat
     worker = new workerThread(tweetQueue, data)
     worker.start()
 
-    twitterCon = TwitterConnectionMock.createTwitterConnection
+    twitterCon = TwitterConnectionImpl.createTwitterConnection
     tl = (tweet: String) => tweetQueue.add(tweet)
     twitterCon.registerEventListener(tl)
   }
