@@ -1,5 +1,6 @@
 package tweets
 
+import com.typesafe.scalalogging.Logger
 import org.apache.spark.sql.Row
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.{BSONReader, BSONWriter, Macros}
@@ -159,6 +160,7 @@ case class Tweet(
 }
 
 case object Tweet {
+  val logger: Logger = Logger(classOf[Tweet])
   /*
     build a Tweet Object form the JSON Object contains data, includes, matching_rules as a nested sub object
     {
@@ -184,7 +186,10 @@ case object Tweet {
         } else {
           withUsers
         }
-      case _ => None
+      case None =>
+        logger.error("Can not create Tweet: Something went wrong with JSON Parser.")
+        logger.info("Tweet: " + json)
+        None
     }
   }
 
@@ -196,7 +201,9 @@ case object Tweet {
     val tweet = (dataMap.get("id"), dataMap.get("text")) match {
       case (Some(id: String), Some(text: String)) =>
         Some(Tweet(id=id, text=text))
-      case _ => None
+      case _ =>
+        logger.error("Can not create Tweet: Tweet Id or Text not exists.")
+        None
     }
     tweet
       .flatMap(tweet => applyCreatedAt(tweet, dataMap))
@@ -377,6 +384,7 @@ case object Tweet {
   // Raw data might contain duplicated context annotations
   def extractContext(context: List[Map[String, Any]]): Option[Context] = {
     if (context.isEmpty) {
+      logger.info("Context List is empty.")
       None
     } else {
       var domainList: Seq[Domain] = List()
@@ -412,6 +420,7 @@ case object Tweet {
   // Raw data might contain duplicated context annotations
   def extractEntities(entities: Map[String, Any]): Option[Entities] = {
     if (entities.isEmpty) {
+      logger.error("Data Object contains no Entities.")
       None
     } else {
       val urls: Option[Seq[Url]] = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
@@ -419,6 +428,7 @@ case object Tweet {
       // entities object could contain mentions (users), hashtags, urls, cashtags ans other attributes
       // even if entities object is not empty, urls and hashtags could still be empty
       if (urls.isEmpty && hashtags.isEmpty) {
+        logger.error("Entities: both Url and hashtags are empty.")
         None
       } else {
         Some(Entities(mentionedUrls = urls, hashtags = hashtags))
@@ -429,6 +439,7 @@ case object Tweet {
   // extract all users within "includes" data map, contains both author and mentioned users
   def extractUsers(userMap: List[Map[String, Any]]): Option[Seq[User]] = {
     if (userMap.isEmpty) {
+      logger.error("Includes Object contains on Users.")
       None
     } else {
       Some(
@@ -453,6 +464,7 @@ case object Tweet {
 
   def extractUserMetrics(metrics: Map[String, Any]): Option[UserMetrics] = {
     if (metrics.isEmpty) {
+      logger.error("User Object contains no metrics.")
       None
     } else {
       Some(
@@ -472,6 +484,7 @@ case object Tweet {
       case (Some(author: User), Some(users: Seq[User])) =>
         val mentionedUsers = users.filter(user => !author.id.equals(user.id))
         if (mentionedUsers.isEmpty) {
+          logger.error("Includes Object contains no Users.")
           None
         } else {
           Some(mentionedUsers)
@@ -484,6 +497,7 @@ case object Tweet {
 
   def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Seq[Url]] = {
     if (urlList.isEmpty) {
+      logger.info("Url List is empty.")
       None
     } else {
       Some(
@@ -502,6 +516,7 @@ case object Tweet {
 
   def extractHashtags(hashtags: List[Map[String,Any]]): Option[Seq[String]] ={
     if (hashtags.isEmpty) {
+      logger.info("Hashtag List is empty.")
       None
     } else {
       Some(
@@ -514,6 +529,7 @@ case object Tweet {
 
   def extractRules(ruleList: List[Map[String, Any]]): Option[Seq[MatchingRule]] = {
     if (ruleList.isEmpty) {
+      logger.info("Matching Rule List is empty.")
       None
     } else {
       Some(
