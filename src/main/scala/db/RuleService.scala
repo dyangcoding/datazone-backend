@@ -19,9 +19,9 @@ object RuleService {
     )
   }
 
-  def FindById(id: String): Future[Option[Rule]] = {
+  def FindById(twitterGenId: String): Future[Option[Rule]] = {
     collection.flatMap(_.find(
-      selector = BSONDocument("id" -> id)
+      selector = BSONDocument("twitterGenId" -> twitterGenId)
     ).one[Rule])
   }
 
@@ -35,7 +35,7 @@ object RuleService {
 
   def UpdateOne(rule: Rule): Future[Option[Rule]] = {
     collection.flatMap(_.findAndUpdate(
-      selector = BSONDocument("id" -> rule._id),
+      selector = BSONDocument("twitterGenId" -> rule.twitterGenId),
       update = BSONDocument("$set" -> rule),
       fetchNewObject = true
     )).map(_.result[Rule])
