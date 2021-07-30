@@ -1,50 +1,50 @@
 package test.rules
 
 import org.scalatest.funsuite.AnyFunSuite
-import rules.{PayloadEntry, Rule, RuleOptions}
+import rules.{PayloadBuilder, PayloadEntry, Rule, RuleOptions}
 import utils.JSONParser
 
-class PayloadEntryTest extends AnyFunSuite{
+class PayloadBuilderTest extends AnyFunSuite{
   test("keyword rule") {
     val rule = Rule(keyword = Some("basic keyword searching"))
-    print(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword with phrase") {
     val rule = Rule(keyword = Some("keyword"),
       phrase = Some("how to achieve a happy dev life"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword with hashtag") {
     val rule = Rule(keyword = Some("keyword"),
       hashtags = Some("#twitterdev"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword with userId") {
     val rule = Rule(keyword = Some("keyword"),
       mentionedUserId = Some("@dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword with fromUser") {
     val rule = Rule(keyword = Some("keyword"),
       fromUser = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword with toUser") {
     val rule = Rule(keyword = Some("keyword"),
       toUser = Some("dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword, phrase, hashtags") {
     val rule = Rule(keyword = Some("keyword"),
       phrase = Some("how to achieve a better dev life"),
       hashtags = Some("#happiness"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji") {
@@ -54,7 +54,7 @@ class PayloadEntryTest extends AnyFunSuite{
       hashtags = Some("#happiness"),
       emoji = Some("dummyEmoji"),
       mentionedUserId = Some("@dailyBerlin"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser") {
@@ -66,7 +66,7 @@ class PayloadEntryTest extends AnyFunSuite{
       mentionedUserId = Some("@dailyBerlin"),
       fromUser = Some("twitterAPI"),
       toUser = Some("twitterDev"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser") {
@@ -80,7 +80,7 @@ class PayloadEntryTest extends AnyFunSuite{
       toUser = Some("twitterDev"),
       url = Some("https://twitterFilteredStreamApi"),
       retweetsOfUser = Some("IntellijLife"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("All") {
@@ -97,7 +97,7 @@ class PayloadEntryTest extends AnyFunSuite{
       context = Some("10.799022225751871488"),
       entity = Some("Berlin HTW"),
       conversationId = Some("1334987486343299072"))
-    println(JSONParser.toJson(rule.toPayloadEntry))
+    print(PayloadBuilder(rule).toPayloadEntry)
   }
 
   test("payload's value extend 512 characters") {
@@ -117,33 +117,7 @@ class PayloadEntryTest extends AnyFunSuite{
         context = Some("10.799022225751871488"),
         entity =  Some("Berlin HTW"),
         conversationId = Some("1334987486343299072"))
-      println(JSONParser.toJson(rule.toPayloadEntry))
+      print(PayloadBuilder(rule).toPayloadEntry)
     }
-  }
-
-  test("payload's tag extend 128 characters") {
-    assertThrows[IllegalArgumentException] {
-      PayloadEntry(
-        value = " ",
-        tag = Some("zQuOndFebzbuBAxHrzsxAEnWtAYqLwlUsnfLXKIIsrDwTrvbYdxlyENUKMRogedUGYTKcuHqSFvDpnryZwQuqdngCZXtYeDXuxiLWwfUXSNzVfkaEmFKcJsNItPKebuRG"))
-    }
-  }
-
-  test("negative sample") {
-    assertThrows[Exception](RuleOptions(sample = Some(-10)))
-  }
-
-  test("non validate sample") {
-    assertThrows[Exception](RuleOptions(sample = Some(110)))
-  }
-
-  test("invalidate language") {
-    assertThrows[Exception](RuleOptions(lang = Some("non sense")))
-  }
-
-  test("apply isRetweet") {
-    val payloadEntry = new PayloadEntry(" ")
-    val option = RuleOptions(isRetweet = Some(true))
-    println(option.applyOptions())
   }
 }
