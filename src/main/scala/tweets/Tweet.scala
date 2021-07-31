@@ -27,7 +27,7 @@ case object Entity {
 /*
   Entity recognition/extraction, topical analysis
  */
-case class Context(domain: Option[Seq[Domain]]=None, entity: Option[Seq[Entity]])
+case class Context(domain: Option[Seq[Domain]]=None, entity: Option[Seq[Entity]]=None)
 case object Context {
   implicit val domain: BSONDocumentHandler[Domain] = Macros.handler[Domain]
   implicit val entity: BSONDocumentHandler[Entity] = Macros.handler[Entity]
@@ -577,7 +577,9 @@ case object Tweet {
           url             = if (value.get(8) != null) Some(value.getString(8)) else None,
           verified        = if (value.get(9) != null) value.getBoolean(9) else false
         ))
-      case _ => None
+      case _ =>
+        logger.info("NO User Row exists.")
+        None
     }
   }
 
@@ -590,7 +592,9 @@ case object Tweet {
           likeCount =    if (value.get(2) != null) value.getInt(2) else 0,
           quoteCount =   if (value.get(3) != null) value.getInt(3) else 0
         ))
-      case _ => None
+      case _ =>
+        logger.info("NO Public Metrics Row exists.")
+        None
     }
   }
 
@@ -602,18 +606,21 @@ case object Tweet {
           urlLinkClicks =     if (value.get(1) != null) value.getInt(1) else 0,
           userProfileClicks = if (value.get(2) != null) value.getInt(2) else 0
         ))
-      case _ => None
+      case _ =>
+        logger.info("No Non Public Metrics Row exists.")
+        None
     }
   }
 
-  def createContext(rows: Option[Row]): Option[Context] = {
-    rows match {
+  def createContext(row: Option[Row]): Option[Context] = {
+    row match {
       case Some(value: Row) =>
         val domainList: Option[Seq[Row]] =
           if (value.get(0) != null) Some(value.getSeq[Row](0).distinct) else None
         val entityList: Option[Seq[Row]] =
           if (value.get(1) != null) Some(value.getSeq[Row](1).distinct) else None
         if (domainList.isEmpty && entityList.isEmpty) {
+          logger.info("Context creation: both Domain and Entity List are empty.")
           None
         } else {
           val domains: Option[Seq[Domain]] = domainList match {
@@ -625,7 +632,9 @@ case object Tweet {
                   description = if (row.get(2) != null) row.getString(2) else "No DOMAIN DESCRIPTION"
                 )
               ).distinct)
-            case  _ => None
+            case  _ =>
+              logger.info("Context creation: Domain List is empty.")
+              None
           }
           val entities: Option[Seq[Entity]] = entityList match {
             case Some(rows: Seq[Row]) =>
@@ -636,11 +645,15 @@ case object Tweet {
                   description = if (row.get(2) != null) row.getString(2) else "NO ENTITY DESCRIPTION"
                 )
               ).distinct)
-            case _ => None
+            case _ =>
+              logger.info("Context creation: Entity List is empty.")
+              None
           }
           Some(Context(domain = domains, entity = entities))
         }
-      case _ => None
+      case _ =>
+        logger.info("NO Context Row exists.")
+        None
     }
   }
 
@@ -659,14 +672,19 @@ case object Tweet {
                 displayUrl  = if (row.get(2) != null) row.getString(2) else "NO DISPLAY URL"
               )
             ).distinct)
-          case _ => None
+          case _ =>
+            logger.info("Entities creation: Url List is empty.")
+            None
         }
         if (hashtags.isEmpty && urls.isEmpty) {
+          logger.info("Entities creation: both Hashtag and Url List are empty.")
           None
         } else {
           Some(Entities(hashtags = hashtags, mentionedUrls = urls))
         }
-      case _ => None
+      case _ =>
+        logger.info("NO Entities Row exists.")
+        None
     }
   }
 
@@ -674,7 +692,9 @@ case object Tweet {
     rows match {
       case Some(values: Seq[Row]) =>
         Some(values.map(userRow => createUser(Some(userRow)).get))
-      case _ => None
+      case _ =>
+        logger.info("NO mentioned User Row exists.")
+        None
     }
   }
 
@@ -687,7 +707,9 @@ case object Tweet {
           tweetCount     = if (value.get(2) != null) value.getInt(2) else 0,
           listedCount    = if (value.get(3) != null) value.getInt(3) else 0
         ))
-      case _ => None
+      case _ =>
+        logger.info("No User Metrics Row exists.")
+        None
     }
   }
 
@@ -700,7 +722,9 @@ case object Tweet {
             tag = if (rule.get(1) != null) rule.getString(1) else ""
           )
         ).distinct)
-      case _ => None
+      case _ =>
+        logger.info("NO Matching Rules Row exists.")
+        None
     }
   }
 
