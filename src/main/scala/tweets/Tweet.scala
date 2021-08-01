@@ -27,7 +27,7 @@ case object Entity {
 /*
   Entity recognition/extraction, topical analysis
  */
-case class Context(domain: Option[Seq[Domain]]=None, entity: Option[Seq[Entity]]=None)
+case class Context(domain: Option[Set[Domain]]=None, entity: Option[Set[Entity]]=None)
 case object Context {
   implicit val domain: BSONDocumentHandler[Domain] = Macros.handler[Domain]
   implicit val entity: BSONDocumentHandler[Entity] = Macros.handler[Entity]
@@ -88,7 +88,7 @@ case object Url {
   Entities are JSON objects that provide additional information about hashtags, urls, user mentions, and cashtags associated with a Tweet
   we utilise hashtags, mentionedUsers, mentionedUrls for now
  */
-case class Entities(hashtags: Option[Seq[String]]=None, mentionedUrls: Option[Seq[Url]]=None)
+case class Entities(hashtags: Option[Set[String]]=None, mentionedUrls: Option[Set[Url]]=None)
 
 case object Entities {
   implicit val mentionedUrlHandler: BSONDocumentHandler[Url] = Macros.handler[Url]
@@ -387,16 +387,16 @@ case object Tweet {
       logger.info("Context List is empty.")
       None
     } else {
-      var domainList: Seq[Domain] = List()
-      var entityList: Seq[Entity] = List()
+      var domainSet: Set[Domain] = Set()
+      var entitySet: Set[Entity] = Set()
       context.distinct.foreach(context => {
-        domainList = domainList :+ extractDomain(context("domain").asInstanceOf[Map[String, Any]])
-        entityList = entityList :+ extractEntity(context("entity").asInstanceOf[Map[String, Any]])
+        domainSet = domainSet + extractDomain(context("domain").asInstanceOf[Map[String, Any]])
+        entitySet = entitySet + extractEntity(context("entity").asInstanceOf[Map[String, Any]])
       })
-      if (domainList.isEmpty && entityList.isEmpty) {
+      if (domainSet.isEmpty && entitySet.isEmpty) {
         None
       } else {
-        Some(Context(domain = Some(domainList.distinct), entity = Some(entityList.distinct)))
+        Some(Context(domain = Some(domainSet), entity = Some(entitySet)))
       }
     }
   }
@@ -423,8 +423,8 @@ case object Tweet {
       logger.error("Data Object contains no Entities.")
       None
     } else {
-      val urls: Option[Seq[Url]] = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
-      val hashtags: Option[Seq[String]] = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
+      val urls: Option[Set[Url]] = extractMentionedUrls(entities.getOrElse("urls", List()).asInstanceOf[List[Map[String, Any]]])
+      val hashtags: Option[Set[String]] = extractHashtags(entities.getOrElse("hashtags", List()).asInstanceOf[List[Map[String, Any]]])
       // entities object could contain mentions (users), hashtags, urls, cashtags ans other attributes
       // even if entities object is not empty, urls and hashtags could still be empty
       if (urls.isEmpty && hashtags.isEmpty) {
@@ -495,13 +495,13 @@ case object Tweet {
     }
   }
 
-  def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Seq[Url]] = {
+  def extractMentionedUrls(urlList: List[Map[String, Any]]): Option[Set[Url]] = {
     if (urlList.isEmpty) {
       logger.info("Url List is empty.")
       None
     } else {
       Some(
-        urlList.distinct.flatMap(url =>
+        urlList.flatMap(url =>
           List(
             Url(
               url = url.getOrElse("url", "").toString,
@@ -509,20 +509,20 @@ case object Tweet {
               displayUrl = url.getOrElse("display_url", "").toString,
             )
           )
-        )
+        ).toSet
       )
     }
   }
 
-  def extractHashtags(hashtags: List[Map[String,Any]]): Option[Seq[String]] ={
+  def extractHashtags(hashtags: List[Map[String,Any]]): Option[Set[String]] ={
     if (hashtags.isEmpty) {
       logger.info("Hashtag List is empty.")
       None
     } else {
       Some(
-        hashtags.distinct.flatMap(tag => {
+        hashtags.flatMap(tag => {
           val t: String = tag.getOrElse("tag", "").toString; if (t == "") List() else List(t)
-        })
+        }).toSet
       )
     }
   }
@@ -588,9 +588,9 @@ case object Tweet {
       case Some(value: Row) =>
         Some(PublicMetrics(
           retweetCount = if (value.get(0) != null) value.getInt(0) else 0,
-          replyCount =   if (value.get(1) != null) value.getInt(1) else 0,
-          likeCount =    if (value.get(2) != null) value.getInt(2) else 0,
-          quoteCount =   if (value.get(3) != null) value.getInt(3) else 0
+          replyCount   = if (value.get(1) != null) value.getInt(1) else 0,
+          likeCount    = if (value.get(2) != null) value.getInt(2) else 0,
+          quoteCount   = if (value.get(3) != null) value.getInt(3) else 0
         ))
       case _ =>
         logger.info("NO Public Metrics Row exists.")
@@ -602,8 +602,8 @@ case object Tweet {
     row match {
       case Some(value: Row) =>
         Some(NonPublicMetrics(
-          impressionCount =   if (value.get(0) != null) value.getInt(0) else 0,
-          urlLinkClicks =     if (value.get(1) != null) value.getInt(1) else 0,
+          impressionCount   = if (value.get(0) != null) value.getInt(0) else 0,
+          urlLinkClicks     = if (value.get(1) != null) value.getInt(1) else 0,
           userProfileClicks = if (value.get(2) != null) value.getInt(2) else 0
         ))
       case _ =>
@@ -615,41 +615,27 @@ case object Tweet {
   def createContext(row: Option[Row]): Option[Context] = {
     row match {
       case Some(value: Row) =>
-        val domainList: Option[Seq[Row]] =
-          if (value.get(0) != null) Some(value.getSeq[Row](0).distinct) else None
-        val entityList: Option[Seq[Row]] =
-          if (value.get(1) != null) Some(value.getSeq[Row](1).distinct) else None
-        if (domainList.isEmpty && entityList.isEmpty) {
+        val domainSet: Set[Row]  = if (value.get(0) != null) value.getSeq[Row](0).toSet else Set()
+        val entityList: Set[Row] = if (value.get(1) != null) value.getSeq[Row](1).toSet else Set()
+        val domains = domainSet.map(row =>
+          Domain(
+            id          = if (row.get(0) != null) row.getString(0) else "NO DOMAIN ID",
+            name        = if (row.get(1) != null) row.getString(1) else "NO DOMAIN NAME",
+            description = if (row.get(2) != null) row.getString(2) else "No DOMAIN DESCRIPTION"
+          )
+        )
+        val entities = entityList.map(row =>
+          Entity(
+            id          = if (row.get(0) != null) row.getString(0) else "NO ENTITY ID",
+            name        = if (row.get(1) != null) row.getString(1) else "NO ENTITY NAME",
+            description = if (row.get(2) != null) row.getString(2) else "NO ENTITY DESCRIPTION"
+          )
+        )
+        if (domains.isEmpty && entities.isEmpty) {
           logger.info("Context creation: both Domain and Entity List are empty.")
           None
         } else {
-          val domains: Option[Seq[Domain]] = domainList match {
-            case Some(rows: Seq[Row]) =>
-              Some(rows.map(row =>
-                Domain(
-                  id          = if (row.get(0) != null) row.getString(0) else "NO DOMAIN ID",
-                  name        = if (row.get(1) != null) row.getString(1) else "NO DOMAIN NAME",
-                  description = if (row.get(2) != null) row.getString(2) else "No DOMAIN DESCRIPTION"
-                )
-              ).distinct)
-            case  _ =>
-              logger.info("Context creation: Domain List is empty.")
-              None
-          }
-          val entities: Option[Seq[Entity]] = entityList match {
-            case Some(rows: Seq[Row]) =>
-              Some(rows.map(row =>
-                Entity(
-                  id          = if (row.get(0) != null) row.getString(0) else "NO ENTITY ID",
-                  name        = if (row.get(1) != null) row.getString(1) else "NO ENTITY NAME",
-                  description = if (row.get(2) != null) row.getString(2) else "NO ENTITY DESCRIPTION"
-                )
-              ).distinct)
-            case _ =>
-              logger.info("Context creation: Entity List is empty.")
-              None
-          }
-          Some(Context(domain = domains, entity = entities))
+          Some(Context(domain = Some(domains), entity = Some(entities)))
         }
       case _ =>
         logger.info("NO Context Row exists.")
@@ -661,26 +647,20 @@ case object Tweet {
   {
     rows match {
       case Some(value: Row) =>
-        val hashtags: Option[Seq[String]] = if (value.get(0) != null) Some(value.getSeq[String](0).distinct) else None
-        val urlRows: Option[Seq[Row]] = if (value.get(1) != null) Some(value.getSeq[Row](1)) else None
-        val urls: Option[Seq[Url]] = urlRows match {
-          case Some(rows: Seq[Row]) =>
-            Some(rows.map(row =>
-              Url(
-                url         = if (row.get(0) != null) row.getString(0) else "NO URL",
-                expandedUrl = if (row.get(1) != null) row.getString(1) else "NO EXPANDED URL",
-                displayUrl  = if (row.get(2) != null) row.getString(2) else "NO DISPLAY URL"
-              )
-            ).distinct)
-          case _ =>
-            logger.info("Entities creation: Url List is empty.")
-            None
-        }
+        val hashtags: Set[String] = if (value.get(0) != null) value.getSeq[String](0).toSet else Set()
+        val urlRows: Set[Row] = if (value.get(1) != null) value.getSeq[Row](1).toSet else Set()
+        val urls = urlRows.map(row =>
+          Url(
+            url         = if (row.get(0) != null) row.getString(0) else "NO URL",
+            expandedUrl = if (row.get(1) != null) row.getString(1) else "NO EXPANDED URL",
+            displayUrl  = if (row.get(2) != null) row.getString(2) else "NO DISPLAY URL"
+          )
+        )
         if (hashtags.isEmpty && urls.isEmpty) {
           logger.info("Entities creation: both Hashtag and Url List are empty.")
           None
         } else {
-          Some(Entities(hashtags = hashtags, mentionedUrls = urls))
+          Some(Entities(hashtags = Some(hashtags), mentionedUrls = Some(urls)))
         }
       case _ =>
         logger.info("NO Entities Row exists.")
