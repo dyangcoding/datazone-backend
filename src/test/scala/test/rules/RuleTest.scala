@@ -61,8 +61,7 @@ class RuleTest extends AnyFunSuite {
 
   test("matching tweets with hashtags requires has:hashtags enabled") {
     assertThrows[IllegalArgumentException] {
-      val rule = Rule(hashtags = Some("#ApacheSpark"), options = Some(RuleOptions.apply(hasHashtags = Some(false))))
-      println(rule.toPayloadEntry)
+      Rule(hashtags = Some("#ApacheSpark"), options = Some(RuleOptions.apply(hasHashtags = Some(false))))
     }
   }
 }

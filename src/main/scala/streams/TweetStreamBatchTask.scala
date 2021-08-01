@@ -7,7 +7,7 @@ import tweets.Tweet
 
 import scala.collection.mutable.ListBuffer
 
-class TweetStreamBatchTask(tweetList:ListBuffer[Tweet]) extends InputPartition[InternalRow] {
+class TweetStreamBatchTask(tweetList: ListBuffer[Tweet]) extends InputPartition[InternalRow] {
   override def createPartitionReader(): InputPartitionReader[InternalRow] = new TweetStreamBatchReader(tweetList)
 }
 
@@ -16,7 +16,7 @@ class TweetStreamBatchTask(tweetList:ListBuffer[Tweet]) extends InputPartition[I
  hat intern einen Zeiger currentIdx
  Implementiert Iterator
  */
-class TweetStreamBatchReader(tweetList:ListBuffer[Tweet]) extends InputPartitionReader[InternalRow] {
+class TweetStreamBatchReader(tweetList: ListBuffer[Tweet]) extends InputPartitionReader[InternalRow] {
   private var currentIdx = -1
   import org.apache.spark.sql.Encoders
   val tweetEncoder: Encoder[Tweet] = Encoders.product[Tweet]

@@ -1,20 +1,18 @@
 package tweets
 
+import com.typesafe.scalalogging.Logger
 import scalaj.http._
+import utils.FileIO
+
 import scala.io.BufferedSource
 
 class TwitterConnectionImpl extends TwitterConnection{
-  //var observerList:ArrayBuffer[TweetListener] = ArrayBuffer()
-  var tt:twitterThread= null
-  //var running = new AtomicBoolean(true)
-  //initialize
+  var tt:twitterThread= _
+  val logger: Logger = Logger(classOf[TwitterConnectionImpl])
   class twitterThread extends Thread {
     override def run() {
-      val TWITTER_FILTERED_STREAM_ENDPOINT =
-        "https://api.twitter.com/2/tweets/search/stream?tweet.fields=attachments,context_annotations,created_at," +
-          "public_metrics,entities,lang&expansions=author_id,referenced_tweets.id,referenced_tweets.id.author_id," +
-          "in_reply_to_user_id,attachments.media_keys,entities.mentions.username"
-      val bearerToken= sys.env.getOrElse("TWITTER_BEARER", "")
+      val TWITTER_FILTERED_STREAM_ENDPOINT = FileIO.getEndpoint
+      val bearerToken= FileIO.getToken
       while (running.get) {
         println("receiving tweets...")
         val request: HttpRequest =
@@ -27,12 +25,15 @@ class TwitterConnectionImpl extends TwitterConnection{
             val bufReader= bufSource.bufferedReader
             while(running.get) {
               val line = bufReader.readLine
-              println(line)
-              sendTweetToListeningClasses(line)
+              if (line.nonEmpty) {
+                sendTweetToListeningClasses(line)
+              } else {
+                logger.info("Read empty line from Input Source.")
+              }
             }
           }
           else {
-            println(".... Restart Connection Necessary .....")
+            logger.info(".... Restart Connection Necessary .....")
           }
         })
       }
@@ -40,8 +41,8 @@ class TwitterConnectionImpl extends TwitterConnection{
   }
 
   override def initialize:Unit={
-    tt= new twitterThread
-    tt.start
+    tt = new twitterThread
+    tt.start()
   }
 
   override def stop: Unit = {
@@ -52,11 +53,6 @@ class TwitterConnectionImpl extends TwitterConnection{
 
 object TwitterConnectionImpl extends TwitterConnection {
   var twiCon:TwitterConnection= new TwitterConnectionImpl
-  def createTwitterConnection:TwitterConnection={
-    twiCon
-  }
-
-  override def stop={
-    twiCon.stop
-  }
+  def createTwitterConnection:TwitterConnection = twiCon
+  override def stop: Unit = twiCon.stop
 }
