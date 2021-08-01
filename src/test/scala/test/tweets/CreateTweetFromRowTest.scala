@@ -140,8 +140,8 @@ class CreateTweetFromRowTest extends AnyFunSuite {
     )
     val context = Tweet.createContext(Some(row))
     assert(context.nonEmpty)
-    assert(context.get.domain.get.length.equals(1))
-    assert(context.get.entity.get.length.equals(1))
+    assert(context.get.domain.get.size.equals(1))
+    assert(context.get.entity.get.size.equals(1))
   }
 
   test("create no entities when null given") {
@@ -170,8 +170,8 @@ class CreateTweetFromRowTest extends AnyFunSuite {
     )
     val entities = Tweet.createEntities(Some(row))
     assert(entities.nonEmpty)
-    assert(entities.get.hashtags.get.length.equals(3))
-    assert(entities.get.mentionedUrls.get.length.equals(1))
+    assert(entities.get.hashtags.get.size.equals(3))
+    assert(entities.get.mentionedUrls.get.size.equals(1))
   }
 
   test("create no mentioned users when null given") {
@@ -314,5 +314,117 @@ class CreateTweetFromRowTest extends AnyFunSuite {
       Row("dummyRuleId1", "dummyRuleTag1"),
     )
     assert(Tweet.createMatchingRules(Some(rows)).get.length.equals(2))
+  }
+
+  test("create basic Tweet") {
+    val row: Row = Row(
+      "id",
+      "text",
+      "createdAt",
+      null,
+      "inReplyToUserId",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "conversationId",
+      "source",
+      "lang"
+    )
+    println(Tweet.createTweetFromRow(row))
+  }
+
+  test("create Tweet with context") {
+    val context: Row = Row(
+      List(Row("domainId", "domainName", "domainDesc")),
+      List(Row("entityId", "entityName", "entityDesc"))
+    )
+    val row: Row = Row(
+      "id",
+      "text",
+      "createdAt",
+      null,
+      "inReplyToUserId",
+      null,
+      null,
+      context,
+      null,
+      null,
+      null,
+      "conversationId",
+      "source",
+      "lang"
+    )
+    println(Tweet.createTweetFromRow(row))
+  }
+
+  test("create Tweet with entities") {
+    val entities: Row = Row(
+      List("#hashtag", "#berlinDailyLife", "#TwitterDev"),
+      List(Row("www.dummyUrl.com", "www.dummyExpandUrl.de", "www.dummyDisplayUrl.cn"))
+    )
+    val row: Row = Row(
+      "id",
+      "text",
+      "createdAt",
+      null,
+      "inReplyToUserId",
+      null,
+      null,
+      null,
+      entities,
+      null,
+      null,
+      "conversationId",
+      "source",
+      "lang"
+    )
+    println(Tweet.createTweetFromRow(row))
+  }
+
+  test("create Tweet with mentioned users") {
+    val users: List[Row] = List(
+      Row("authorId", "name", "userName", "createdAt", "description", "location", "profileImageUrl", null, "url", true),
+      Row("id", "name", "userName", "createdAt", "description", "location", "profileImageUrl", null, "url", true))
+    val row: Row = Row(
+      "id",
+      "text",
+      "createdAt",
+      null,
+      "inReplyToUserId",
+      null,
+      null,
+      null,
+      null,
+      users,
+      null,
+      "conversationId",
+      "source",
+      "lang"
+    )
+    println(Tweet.createTweetFromRow(row))
+  }
+
+  test("create Tweet with matching rules") {
+    val rules: List[Row] = List(Row("dummyRuleId", "dummyRuleTag"))
+    val row: Row = Row(
+      "id",
+      "text",
+      "createdAt",
+      null,
+      "inReplyToUserId",
+      null,
+      null,
+      null,
+      null,
+      null,
+      rules,
+      "conversationId",
+      "source",
+      "lang"
+    )
+    println(Tweet.createTweetFromRow(row))
   }
 }

@@ -542,24 +542,24 @@ case object Tweet {
     }
   }
 
-  // TODO Test
   def createTweetFromRow(row: Row): Tweet = {
-    Tweet(
-      id =                if (row.get(0) != null) row.getString(0) else "NO TWEET ID",
-      text =              if (row.get(1) != null) row.getString(1) else "NO TWEET TEXT",
-      createdAt =         if (row.get(2) != null) Some(row.getString(2)) else None,
-      author =            createUser(Some(row.get(3).asInstanceOf[Row])),
-      inReplyToUserId =   if (row.get(4) != null) Some(row.getString(4)) else None,
-      publicMetrics =     createPublicMetrics(Some(row.get(5).asInstanceOf[Row])),
-      nonPublicMetrics =  createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row])),
-      context =           createContext(Some(row.get(7).asInstanceOf[Row])),
-      entities =          createEntities(Some(row.get(8).asInstanceOf[Row])),
-      mentionedUsers =    createMentionedUsers(if (row.get(9) != null) Some(row.getSeq[Row](9)) else None),
-      matchingRules =     createMatchingRules(if (row.get(10) != null) Some(row.getSeq[Row](10)) else None),
-      conversationId =    if (row.get(11) != null) Some(row.getString(11)) else None,
-      source =            if (row.get(12) != null) Some(row.getString(12)) else None,
-      lang =              if (row.get(13) != null) Some(row.getString(13)) else None
+    val basicTweet = Tweet(
+      id              = if (row.get(0) != null) row.getString(0) else "NO TWEET ID",
+      text            = if (row.get(1) != null) row.getString(1) else "NO TWEET TEXT",
+      createdAt       = if (row.get(2) != null) Some(row.getString(2)) else None,
+      inReplyToUserId = if (row.get(4) != null) Some(row.getString(4)) else None,
+      conversationId  = if (row.get(11) != null) Some(row.getString(11)) else None,
+      source          = if (row.get(12) != null) Some(row.getString(12)) else None,
+      lang            = if (row.get(13) != null) Some(row.getString(13)) else None
     )
+    basicTweet
+      .map(tweet => tweet.copy(author = createUser(Some(row.get(3).asInstanceOf[Row]))))
+      .map(tweet => tweet.copy(publicMetrics = createPublicMetrics(Some(row.get(5).asInstanceOf[Row]))))
+      .map(tweet => tweet.copy(nonPublicMetrics = createNonPublicMetrics(Some(row.get(6).asInstanceOf[Row]))))
+      .map(tweet => tweet.copy(context = createContext(Some(row.get(7).asInstanceOf[Row]))))
+      .map(tweet => tweet.copy(entities = createEntities(Some(row.get(8).asInstanceOf[Row]))))
+      .map(tweet => tweet.copy(mentionedUsers = createMentionedUsers(if (row.get(9) != null) Some(row.getSeq[Row](9)) else None, tweet.author)))
+      .map(tweet => tweet.copy(matchingRules = createMatchingRules(if (row.get(10) != null) Some(row.getSeq[Row](10)) else None)))
   }
 
   def createUser(row: Option[Row]): Option[User] = {
