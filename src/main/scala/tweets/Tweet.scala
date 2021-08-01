@@ -668,11 +668,14 @@ case object Tweet {
     }
   }
 
-  def createMentionedUsers(rows: Option[Seq[Row]]): Option[Seq[User]] = {
-    rows match {
-      case Some(values: Seq[Row]) =>
-        Some(values.map(userRow => createUser(Some(userRow)).get))
-      case _ =>
+  def createMentionedUsers(rows: Option[Seq[Row]], author: Option[User]): Option[Seq[User]] = {
+    (rows, author) match {
+      case (Some(values: Seq[Row]), Some(author: User)) =>
+        val users = values.map(userRow => createUser(Some(userRow)).get)
+        Some(users.filter(user => user.id.equals(author.id)).distinct)
+      case (Some(values: Seq[Row]), None) =>
+        Some(values.map(userRow => createUser(Some(userRow)).get).distinct)
+      case (_, _) =>
         logger.info("NO mentioned User Row exists.")
         None
     }
