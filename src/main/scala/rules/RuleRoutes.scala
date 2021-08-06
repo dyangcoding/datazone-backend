@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import utils.JSONParser
+import java.time.Instant
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -24,7 +25,7 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
       get {
         /**
          * no need to fetch all Rules from the Twitter API
-         *  -- whenever Rules get updated (added or deleted), database would also get updated as a side effect
+         *  -- whenever Rules get updated (added or deleted), database would also get updated
          *  -- Twitter API contains all Rules with ID, Value (Rule as string payload), Tag,
          *      which do not match the Rules that are stored within the database
          */
@@ -43,7 +44,7 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
           val addingRule: Future[Rule] = for (rule <- RulesClient.addRules(payload.toJson)) yield rule
           onComplete(addingRule) {
             case Success(rule: Rule) =>
-              val validatedRule = originRule.copy(id = rule.id, tag = rule.tag)
+              val validatedRule = originRule.copy(id = rule.id, createdAt=Some(Instant.now().toString), tag = rule.tag)
               val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(validatedRule, _))
               onSuccess(insertedRule) {
                 case RuleRepository.SingleActionSucceeded(result) => complete(StatusCodes.Created -> JSONParser.toJson(result))
@@ -53,11 +54,6 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
           }
         }
       },
-
-      /**
-       * note that the id generated from Mongo can not be identified within Twitter API,
-       * so the Id here referred to the twitterGenId
-       */
       (delete & path(LongNumber)) { id =>
         val payload: DeletePayload = DeletePayload(List(id.toString))
         val deletingRule: Future[Boolean] = for (rule <- RulesClient.deleteRules(payload.toJson)) yield rule

@@ -29,7 +29,8 @@ case object RuleOptions {
 }
 
 case class Rule(
-                id:              Option[String]      =None, // will be generated once it is verified by the Twitter API and could be utilised to deduplicate objects within DB
+                id:              Option[String]      =None, // will be generated once it is verified by the Twitter API
+                createdAt:       Option[String]      =None, // timestamp when this rule was created, generated right after the rule was verified by Twitter API and before inserted into MongoDB
                 keyword:         Option[String]      =None, // matches a keyword within the body of a Tweet
                 emoji:           Option[String]      =None,
                 mentionedUserId: Option[String]      =None, // including the @ character
@@ -89,5 +90,5 @@ case object Rule {
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions.apply)
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat15(Rule.apply)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat16(Rule.apply)
 }
