@@ -45,109 +45,91 @@ case class PayloadEntry(value: String, tag: Option[String] = None) {
   }
 
   def applyKeyword(keyword: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, keyword)))
+    this.flatMap(payload => payload.copy(value = And(payload.value, keyword)))
   }
 
   def applyHashtag(hashtag: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, hashtag)))
+    this.flatMap(payload => payload.copy(value = And(payload.value, hashtag)))
   }
 
   def applyUser(userId: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, AppendAt(userId))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, AppendAt(userId))))
   }
 
   def applyFromUser(fromUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("from:", fromUser))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("from:", fromUser))))
   }
 
   def applyToUser(toUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("to:", toUser))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("to:", toUser))))
   }
 
   def applyRetweetsOfUser(retweetsOfUser: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("retweetOf:", retweetsOfUser))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("retweetOf:", retweetsOfUser))))
   }
 
   def applyEmoji(emoji: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, emoji)))
+    this.flatMap(payload => payload.copy(value = And(payload.value, emoji)))
   }
 
   def applyUrl(url: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, url)))
+    this.flatMap(payload => payload.copy(value = And(payload.value, url)))
   }
 
   def applyPhrase(phrase: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Group(phrase))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Group(phrase))))
   }
 
   def applyContext(context: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("context:", context))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("context:", context))))
   }
 
   def applyEntity(entity: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("entity:", entity))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("entity:", entity))))
   }
 
   def applyConversationId(conversationId: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("conversation_id:", conversationId))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("conversation_id:", conversationId))))
   }
 
-  def applyTag(tagValue: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(payload.value, tag=Option(tagValue)))
+  def applyTag(tag: String): PayloadEntry = {
+    this.flatMap(payload => payload.copy(tag=Option(tag)))
   }
-
-  // apply Rule Options
 
   // TODO: if false war given, it does not mean that the negative case should be applied as rule options
-  def applyIsRetweet(isRetweet: Boolean): PayloadEntry = {
-    val text = if (isRetweet) "is:retweet" else "-is:retweet"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyIsRetweet: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "is:retweet")))
 
-  def applyIsVerified(isVerified: Boolean): PayloadEntry = {
-    val text = if (isVerified) "is:verified" else "-is:verified"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyIsVerified: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "is:verified")))
 
-  def applyIsReply(isReply: Boolean): PayloadEntry = {
-    val text = if (isReply) "is:reply" else "-is:reply"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyIsReply: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "is:reply")))
 
-  def applyHasHashtags(hasHashtags: Boolean): PayloadEntry = {
-    val text = if (hasHashtags) "has:hashtags" else "-has:hashtags"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyHasHashtags: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "has:hashtags")))
 
-  def applyHasLinks(hasLinks: Boolean): PayloadEntry = {
-    val text = if (hasLinks) "has:links" else "-has:links"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyHasLinks: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "has:links")))
 
-  def applyHasMedia(hasMedia: Boolean): PayloadEntry = {
-    val text = if (hasMedia) "has:media" else "-has:media"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyHasMedia: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "has:media")))
 
-  def applyHasImages(hasImages: Boolean): PayloadEntry = {
-    val text = if (hasImages) "has:images" else "-has:images"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyHasImages: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "has:images")))
 
-  def applyHasVideos(hasVideos: Boolean): PayloadEntry = {
-    val text = if (hasVideos) "has:videos" else "-has:videos"
-    this.flatMap(payload => PayloadEntry(And(payload.value, text)))
-  }
+  def applyHasVideos: PayloadEntry =
+    this.flatMap(payload => payload.copy(value = And(payload.value, "has:videos")))
 
   def applyLanguage(lang: String): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("lang:", lang))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("lang:", lang))))
   }
 
   def applySample(sample: Int): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(And(payload.value, Append("sample:", sample.toString))))
+    this.flatMap(payload => payload.copy(value = And(payload.value, Append("sample:", sample.toString))))
   }
 
   def group(): PayloadEntry = {
-    this.flatMap(payload => PayloadEntry(Group(payload.value)))
+    this.flatMap(payload => payload.copy(Group(payload.value)))
   }
 }

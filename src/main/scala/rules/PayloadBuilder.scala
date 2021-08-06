@@ -1,7 +1,7 @@
 package rules
 
 case class PayloadBuilder(rule: Rule) {
-  // starting point to build a PayloadEntry, note that PayloadEntry requires a non empty value
+  // starting point to build a PayloadEntry, note that PayloadEntry requires a non empty string value
   private def toBasicPayload: PayloadEntry = PayloadEntry(value = " ")
 
   private def applyKeyword(payload: PayloadEntry): PayloadEntry = {
@@ -99,61 +99,62 @@ case class PayloadBuilder(rule: Rule) {
 
   private def applyIsRetweet(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isRetweet match {
-      case Some(isRetweet: Boolean) => payload.applyIsRetweet(isRetweet)
+      case Some(isRetweet: Boolean) => payload.applyIsRetweet
       case _ => payload
     }
   }
 
   private def applyIsVerified(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isVerified match {
-      case Some(isVerified: Boolean) => payload.applyIsVerified(isVerified)
+      case Some(isVerified: Boolean) => payload.applyIsVerified
       case _ => payload
     }
   }
 
   private def applyIsReply(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isReply match {
-      case Some(isReply: Boolean) => payload.applyIsReply(isReply)
+      case Some(isReply: Boolean) => payload.applyIsReply
       case _ => payload
     }
   }
 
   private def applyHasHashtags(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasHashtags match {
-      case Some(hasHashtags: Boolean) => payload.applyHasHashtags(hasHashtags)
+      case Some(hasHashtags: Boolean) => payload.applyHasHashtags
       case _ => payload
     }
   }
 
   private def applyHasLinks(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasLinks match {
-      case Some(hasLinks: Boolean) => payload.applyHasLinks(hasLinks)
+      case Some(hasLinks: Boolean) => payload.applyHasLinks
       case _ => payload
     }
   }
 
   private def applyHasMedia(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasMedia match {
-      case Some(hasHasMedia: Boolean) => payload.applyHasMedia(hasHasMedia)
+      case Some(hasHasMedia: Boolean) => payload.applyHasMedia
       case _ => payload
     }
   }
 
   private def applyHasImages(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasImages match {
-      case Some(hasImage: Boolean) => payload.applyHasImages(hasImage)
+      case Some(hasImage: Boolean) => payload.applyHasImages
       case _ => payload
     }
   }
 
   private def applyHasVideos(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasVideos match {
-      case Some(hasVideos: Boolean) => payload.applyHasVideos(hasVideos)
+      case Some(hasVideos: Boolean) => payload.applyHasVideos
       case _ => payload
     }
   }
 
-  private def applyLanguage(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {options.lang match {
+  private def applyLanguage(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
+    options.lang match {
       case Some(lang: String) => payload.applyLanguage(lang)
       case _ => payload.applyLanguage("en")
     }
@@ -183,7 +184,7 @@ case class PayloadBuilder(rule: Rule) {
   private def applyOptions(payload: PayloadEntry): PayloadEntry = {
     rule.options match {
       case Some(options: RuleOptions) => applyOptionsInternal(payload, options)
-      case None => payload
+      case None => applyOptionsInternal(payload, new RuleOptions)
     }
   }
 
@@ -205,6 +206,7 @@ case class PayloadBuilder(rule: Rule) {
   }
 
   def toPayloadEntry: PayloadEntry = {
-    toPayloadEntryInternal.flatMap(payload => applyOptions(payload))
+    toPayloadEntryInternal
+      .flatMap(payload => applyOptions(payload))
   }
 }
