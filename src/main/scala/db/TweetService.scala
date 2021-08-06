@@ -26,6 +26,7 @@ object TweetService {
 
   def FetchAll(): Future[Seq[Tweet]] = {
     collection.flatMap(_.find(BSONDocument())
+      .projection(BSONDocument("_id" -> 0))
       .cursor[Tweet](ReadPreference.primary)
       .collect[Seq](Int.MaxValue, Cursor.FailOnError[Seq[Tweet]]())
     )
