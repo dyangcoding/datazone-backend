@@ -1,8 +1,7 @@
 package rules
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import db.RuleService
@@ -30,7 +29,6 @@ object RuleRepository {
   final case class DeleteRuleById(id: String, replyTo: ActorRef[Response]) extends Command
   final case class ClearRules(replyTo: ActorRef[Response]) extends Command
 
-  // This behavior handles all possible incoming messages and keeps the state in the function parameter
   def apply(): Behavior[Command] = Behaviors.receiveMessage {
     case FetchRules(replyTo) =>
       RuleService.FetchAll().onComplete{
@@ -43,7 +41,7 @@ object RuleRepository {
 
     case AddRule(rule, replyTo) =>
       RuleService.InsertOne(rule).onComplete{
-        case Success(writeResult) =>
+        case Success(_) =>
           RuleService.FindOne(rule).onComplete {
             case Success(rule) => replyTo ! SingleActionSucceeded(rule)
             case Failure(exception) => replyTo ! SingleActionFailed(exception.toString)
@@ -55,7 +53,7 @@ object RuleRepository {
 
     case DeleteRuleById(id, replyTo) =>
       RuleService.DeleteById(id).onComplete {
-        case Success(writeResult) =>
+        case Success(_) =>
           replyTo ! ActionSucceeded()
         case Failure(exception) =>
           replyTo ! ActionFailed(exception.getMessage)

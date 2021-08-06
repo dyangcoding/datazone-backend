@@ -76,14 +76,10 @@ case class Rule(
   require(hashtags.isEmpty || (hashtags.forall(_.nonEmpty) && options.forall(options => options.hasHashtags.contains(true))),
         "In order to match Tweets that contain Hashtag, The Option hasHashtags must be enabled.")
 
-  // TODO: validate all properties, all true for testing purpose
-  def isValidate: Boolean = true
-
   private def atLeastOne(): Boolean =
     keyword.nonEmpty || emoji.nonEmpty || mentionedUserId.nonEmpty || phrase.nonEmpty ||
       hashtags.nonEmpty || url.nonEmpty || fromUser.nonEmpty || toUser.nonEmpty ||
       retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty
-
 }
 
 case object Rule {

@@ -31,7 +31,7 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
         val fetchRules: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.FetchRules)
         onSuccess(fetchRules) {
           case RuleRepository.MultiActionsSucceeded(results) => complete(StatusCodes.OK -> JSONParser.toJson(results))
-          case RuleRepository.MultiActionsFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+          case RuleRepository.MultiActionsFailed(reason)     => complete(StatusCodes.InternalServerError -> reason)
         }
       },
       post {
@@ -43,11 +43,11 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
           val addingRule: Future[Rule] = for (rule <- RulesClient.addRules(payload.toJson)) yield rule
           onComplete(addingRule) {
             case Success(rule: Rule) =>
-              val ruleWithTwitterId = originRule.copy(id = rule.id, tag = rule.tag)
-              val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(ruleWithTwitterId, _))
+              val validatedRule = originRule.copy(id = rule.id, tag = rule.tag)
+              val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(validatedRule, _))
               onSuccess(insertedRule) {
                 case RuleRepository.SingleActionSucceeded(result) => complete(StatusCodes.Created -> JSONParser.toJson(result))
-                case RuleRepository.SingleActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
+                case RuleRepository.SingleActionFailed(reason)    => complete(StatusCodes.InternalServerError -> reason)
               }
             case Failure(exception) => complete(StatusCodes.BadRequest -> exception.getMessage)
           }
@@ -65,7 +65,7 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
           case Success(_: Boolean) =>
             val deletedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.DeleteRuleById(id.toString, _))
             onSuccess(deletedRule) {
-              case RuleRepository.ActionSucceeded() => complete(StatusCodes.OK)
+              case RuleRepository.ActionSucceeded()    => complete(StatusCodes.OK)
               case RuleRepository.ActionFailed(reason) => complete(StatusCodes.InternalServerError -> reason)
             }
           case Failure(exception) => complete(StatusCodes.BadRequest -> exception.getMessage)
