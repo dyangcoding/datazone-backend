@@ -132,12 +132,12 @@ object RulesClient extends HttpClient {
     } else if (data.length > 1) {
       throw new InvalidObjectException("Data object contains more then one values.")
     } else {
-      val twitterGenId = data.head.getOrElse("id", "").asInstanceOf[String]
+      val id = data.head.getOrElse("id", "").asInstanceOf[String]
       val tag = data.head.getOrElse("tag", "").asInstanceOf[String]
-      if (twitterGenId.isEmpty) {
+      if (id.isEmpty) {
         throw new InvalidObjectException("Data Object contains no Id generated from Twitter.")
       } else {
-        Some(Rule(twitterGenId = Some(twitterGenId), tag = Some(tag)))
+        Some(Rule(id = Some(id), tag = Some(tag)))
       }
     }
   }

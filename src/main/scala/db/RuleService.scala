@@ -14,14 +14,15 @@ object RuleService {
 
   def FetchAll(): Future[Seq[Rule]] = {
     collection.flatMap(_.find(BSONDocument())
+      .projection(BSONDocument("_id" -> 0))
       .cursor[Rule](ReadPreference.primary)
       .collect[Seq](25, Cursor.FailOnError[Seq[Rule]]())
     )
   }
 
-  def FindById(twitterGenId: String): Future[Option[Rule]] = {
+  def FindById(id: String): Future[Option[Rule]] = {
     collection.flatMap(_.find(
-      selector = BSONDocument("twitterGenId" -> twitterGenId)
+      selector = BSONDocument("id" -> id)
     ).one[Rule])
   }
 
@@ -35,7 +36,7 @@ object RuleService {
 
   def UpdateOne(rule: Rule): Future[Option[Rule]] = {
     collection.flatMap(_.findAndUpdate(
-      selector = BSONDocument("twitterGenId" -> rule.twitterGenId),
+      selector = BSONDocument("id" -> rule.id),
       update = BSONDocument("$set" -> rule),
       fetchNewObject = true
     )).map(_.result[Rule])
@@ -45,9 +46,9 @@ object RuleService {
     collection.flatMap(_.delete.one(rule))
   }
 
-  def DeleteById(twitterGenId: String): Future[WriteResult] = {
+  def DeleteById(id: String): Future[WriteResult] = {
     collection.flatMap(_.delete.one(
-      q = BSONDocument("twitterGenId" -> twitterGenId)
+      q = BSONDocument("id" -> id)
     ))
   }
 }

@@ -107,7 +107,7 @@ class RulesClientTest extends AsyncFlatSpec with IdiomaticMockito {
     val result = RulesClient.parseResponse(responseMap)
     result match {
       case Right(rule) =>
-        assert(rule.twitterGenId.get.equals("12345678901234567"))
+        assert(rule.id.get.equals("12345678901234567"))
         assert(rule.tag.get.equals("puppy with images"))
     }
   }

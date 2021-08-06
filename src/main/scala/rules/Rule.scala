@@ -1,11 +1,9 @@
 package rules
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import reactivemongo.api.bson.{BSONDocumentHandler, BSONObjectID, Macros}
-import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, RootJsonFormat, deserializationError}
-import utils.{JSONParser, StringUtils}
-
-import scala.util.{Failure, Success}
+import reactivemongo.api.bson.{BSONDocumentHandler, Macros}
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import utils.StringUtils
 
 case class RuleOptions(isRetweet:    Option[Boolean]=None, // match Tweets that are truly retweets
                        isVerified:   Option[Boolean]=None, // deliver only Tweets whose authors are verified by Twitter
@@ -30,8 +28,8 @@ case object RuleOptions {
   implicit val RuleOptionHandler: BSONDocumentHandler[RuleOptions] = Macros.handler[RuleOptions]
 }
 
-case class Rule(_id:             Option[BSONObjectID]=None, // require internal for mongo
-                twitterGenId:    Option[String]      =None, // will be generated once it is verified by the Twitter API and could be utilised to deduplicate objects within DB
+case class Rule(
+                id:              Option[String]      =None, // will be generated once it is verified by the Twitter API and could be utilised to deduplicate objects within DB
                 keyword:         Option[String]      =None, // matches a keyword within the body of a Tweet
                 emoji:           Option[String]      =None,
                 mentionedUserId: Option[String]      =None, // including the @ character
@@ -94,19 +92,6 @@ case object Rule {
 
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit object BsonObjectIDFormat extends RootJsonFormat[BSONObjectID] {
-    override def read(json: JsValue): BSONObjectID =
-      json match {
-        case JsString(oid) => BSONObjectID.parse(oid) match {
-          case Success(parsedObjectId) => parsedObjectId
-          case Failure(_)              => deserializationError("BSONObjectID could not be created from given string")
-        }
-        case _ => throw DeserializationException("ObjectID could not be converted to BSONObjectID object")
-      }
-
-    override def write(obj: BSONObjectID): JsValue = JsString(JSONParser.toJson(obj))
-  }
-
   implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions.apply)
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat16(Rule.apply)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat15(Rule.apply)
 }

@@ -43,7 +43,7 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
           val addingRule: Future[Rule] = for (rule <- RulesClient.addRules(payload.toJson)) yield rule
           onComplete(addingRule) {
             case Success(rule: Rule) =>
-              val ruleWithTwitterId = originRule.copy(twitterGenId = rule.twitterGenId, tag = rule.tag)
+              val ruleWithTwitterId = originRule.copy(id = rule.id, tag = rule.tag)
               val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(ruleWithTwitterId, _))
               onSuccess(insertedRule) {
                 case RuleRepository.SingleActionSucceeded(result) => complete(StatusCodes.Created -> JSONParser.toJson(result))
