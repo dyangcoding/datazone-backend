@@ -11,7 +11,7 @@ trait DBUtil {
 }
 
 object DBUtil extends DBUtil {
-  val mongoUri: String = FileIO.getMongoUri
+  val mongoUri: String = FileIO.getMongoUri()
 
   import ExecutionContext.Implicits.global
 
