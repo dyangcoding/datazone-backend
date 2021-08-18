@@ -1,0 +1,29 @@
+# bloop and metals
+.bsp
+
+# sbt
+# (may want to keep parts of 'project')
+bin/
+project/
+target/
+build/
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+# mac
+.DS_Store
+
+src/main/resources/
+
+# exclude Implementations which i do not own
+src/main/scala/streams/
+
+src/main/scala/tweets/*
+!src/main/scala/tweets/Tweet.scala
+!src/main/scala/tweets/TweetRoutes.scala
+!src/main/scala/tweets/TweetRepository.scala
