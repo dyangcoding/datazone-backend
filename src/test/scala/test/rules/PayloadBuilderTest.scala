@@ -5,13 +5,13 @@ import rules.{PayloadBuilder, PayloadEntry, Rule, RuleOptions}
 import utils.JSONParser
 
 class PayloadBuilderTest extends AnyFunSuite{
-  test("keyword rule") {
+  test("build Payload with keyword given") {
     val rule = Rule(keyword = Some("basic keyword searching"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
     assert(payloadEntry.value.contains("basic keyword searching"))
   }
 
-  test("keyword with phrase") {
+  test("build Payload with given keyword, phrase") {
     val rule = Rule(keyword = Some("keyword"),
       phrase = Some("how to achieve a happy dev life"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
@@ -19,7 +19,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("how to achieve a happy dev life"))
   }
 
-  test("keyword with hashtag") {
+  test("build Payload with given keyword, hashtag") {
     val rule = Rule(keyword = Some("keyword"),
       hashtags = Some("#twitterdev"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
@@ -27,7 +27,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("#twitterdev"))
   }
 
-  test("keyword with userId") {
+  test("build Payload with given keyword, userId") {
     val rule = Rule(keyword = Some("keyword"),
       mentionedUserId = Some("@dailyBerlin"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
@@ -35,7 +35,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("@dailyBerlin"))
   }
 
-  test("keyword with fromUser") {
+  test("build Payload with given keyword, fromUser") {
     val rule = Rule(keyword = Some("keyword"),
       fromUser = Some("dailyBerlin"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
@@ -43,7 +43,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("dailyBerlin"))
   }
 
-  test("keyword with toUser") {
+  test("build Payload with given keyword, toUser") {
     val rule = Rule(keyword = Some("keyword"),
       toUser = Some("dailyBerlin"))
     val payloadEntry = PayloadBuilder(rule).toPayloadEntry
@@ -51,7 +51,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("dailyBerlin"))
   }
 
-  test("keyword, phrase, hashtags") {
+  test("build Payload with given keyword, phrase, hashtags") {
     val rule = Rule(keyword = Some("keyword"),
       phrase = Some("how to achieve a better dev life"),
       hashtags = Some("#happiness"))
@@ -61,7 +61,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("how to achieve a better dev life"))
   }
 
-  test("keyword, phrase, hashtags, mentionedUser, emoji") {
+  test("build Payload with given keyword, phrase, hashtags, mentionedUser, emoji") {
     val rule = Rule(
       keyword = Some("keyword"),
       phrase = Some("how to achieve a better dev life"),
@@ -117,7 +117,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.tag.isEmpty)
   }
 
-  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser with tag") {
+  test("keyword, phrase, hashtags, mentionedUser, emoji, fromUser, toUser, url, retweetsOfUser, tag") {
     val rule = Rule(
       keyword = Some("keyword"),
       phrase = Some("how to achieve a better dev life"),
@@ -141,7 +141,7 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.tag.nonEmpty)
   }
 
-  test("All") {
+  test("build Payload with all given attributes") {
     val rule = Rule(
       keyword = Some("keyword"),
       phrase = Some("how to achieve a better dev life"),
@@ -169,26 +169,5 @@ class PayloadBuilderTest extends AnyFunSuite{
     assert(payloadEntry.value.contains("Berlin HTW"))
     assert(payloadEntry.value.contains("1334987486343299072"))
     assert(payloadEntry.tag.nonEmpty)
-  }
-
-  test("payload's value extend 512 characters") {
-    assertThrows[IllegalArgumentException] {
-      val rule = Rule(
-        keyword = Some("When warming diced bagels, be sure they are room temperature, " +
-          "Silence yearns when you handle with mineral, Stars tremble with alarm!, Why does the dosi malfunction?, " +
-          "Our enlightened everything for milk is to gain others, Queens resist on turbulence at deep"),
-        phrase =  Some("how to achieve a better dev life"),
-        hashtags =Some("#happiness"),
-        emoji =   Some("dummyEmoji"),
-        mentionedUserId = Some("@dailyBerlin"),
-        fromUser =Some("twitterAPI"),
-        toUser =  Some("twitterDev"),
-        url =     Some("https://twitterFilteredStreamApi"),
-        retweetsOfUser = Some("IntellijLife"),
-        context = Some("10.799022225751871488"),
-        entity =  Some("Berlin HTW"),
-        conversationId = Some("1334987486343299072"))
-      println(PayloadBuilder(rule).toPayloadEntry)
-    }
   }
 }
