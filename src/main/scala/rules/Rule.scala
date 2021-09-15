@@ -44,6 +44,7 @@ case class Rule(
                 entity:          Option[String]      =None, // matches Tweets with a specific entity string value
                 conversationId:  Option[String]      =None, // matches Tweets that share a common conversation ID
                 tag:             Option[String]      =None, // could be utilised for sorting rule, for now just a simple string
+                payload:         Option[String]      =None, // represents the payload that was added to twitter API
                 options:         Option[RuleOptions] =None
 ){
   // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
@@ -90,5 +91,5 @@ case object Rule {
 // provides Json Unmarshalling utility
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val ruleOptionsFormat: RootJsonFormat[RuleOptions] = jsonFormat10(RuleOptions.apply)
-  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat16(Rule.apply)
+  implicit val fullRuleFormat: RootJsonFormat[Rule] = jsonFormat17(Rule.apply)
 }

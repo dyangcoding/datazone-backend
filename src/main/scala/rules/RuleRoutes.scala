@@ -40,11 +40,12 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
          * Only add Rule to local database after Rule inserting at Twitter API was succeeded
          */
         entity(as[Rule]) { originRule =>
-          val payload: AddPayload = AddPayload(List(PayloadBuilder(originRule).toPayloadEntry))
+          val entry: PayloadEntry = PayloadBuilder(originRule).toPayloadEntry
+          val payload: AddPayload = AddPayload(List(entry))
           val addingRule: Future[Rule] = for (rule <- RulesClient.addRules(payload.toJson)) yield rule
           onComplete(addingRule) {
             case Success(rule: Rule) =>
-              val validatedRule = originRule.copy(id = rule.id, createdAt=Some(Instant.now().toString), tag = rule.tag)
+              val validatedRule = originRule.copy(id = rule.id, createdAt = Some(Instant.now().toString), payload = Some(entry.value), tag = rule.tag)
               val insertedRule: Future[RuleRepository.Response] = ruleRepository.ask(RuleRepository.AddRule(validatedRule, _))
               onSuccess(insertedRule) {
                 case RuleRepository.SingleActionSucceeded(result) => complete(StatusCodes.Created -> JSONParser.toJson(result))
