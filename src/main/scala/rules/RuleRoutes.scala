@@ -6,8 +6,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import utils.JSONParser
-import java.time.Instant
 
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,7 +19,6 @@ class RuleRoutes(ruleRepository: ActorRef[RuleRepository.Command])(implicit syst
   // asking someone requires a timeout and a scheduler, if the timeout hits without response
   // the ask is failed with a TimeoutException
   implicit val timeout: Timeout = 10.seconds
-
   lazy val routes: Route = {
     concat(
       get {

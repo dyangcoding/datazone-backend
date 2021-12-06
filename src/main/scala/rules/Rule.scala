@@ -13,14 +13,14 @@ case class RuleOptions(isRetweet:    Option[Boolean]=None, // match Tweets that 
                        hasMedia:     Option[Boolean]=None, // match Tweets that contain a media object, such as a photo, GIF, or video, as determined by Twitter
                        hasImages:    Option[Boolean]=None, // match Tweets that contain a recognized URL to an image
                        hasVideos:    Option[Boolean]=None, // match Tweets that contain native Twitter videos, uploaded directly to Twitter
-                       lang:         Option[String] =None, // match Tweets that have been classified by Twitter as being of a particular language
-                       sample:       Option[Int]    =None  // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
+                       language:     Option[String] =None, // match Tweets that have been classified by Twitter as being of a particular language
+                       sample:       Option[Int]    =None // a random percent sample of Tweets that match a rule rather than the entire set of Tweets
                       ) {
 
   require(sample.isEmpty || sample.forall(sample => sample > 0 && sample <= 100),
     "Sample must be within the 0 (exclusive) and 100 (inclusive)")
 
-  require(lang.isEmpty || (lang.forall(_.nonEmpty) && StringUtils.langList().contains(lang.toString)),
+  require(language.isEmpty || (language.forall(_.nonEmpty) && StringUtils.langList().contains(language.map(_.toString).getOrElse("en"))),
     "Language must be one of the currently supported 47 Languages")
 }
 
@@ -48,7 +48,7 @@ case class Rule(
                 options:         Option[RuleOptions] =None
 ){
   // prohibit client sending empty Rule Data, also Rule Options can not be utilised alone for building rules
-  // require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
+  require(atLeastOne(), "Provide at least One possible Rule Operator to effectively match any Tweets.")
 
   // Rule data validation
   require(keyword.isEmpty || (keyword.forall(_.nonEmpty) && keyword.forall(text => text.length <= 256)),
@@ -81,7 +81,7 @@ case class Rule(
   private def atLeastOne(): Boolean =
     keyword.nonEmpty || emoji.nonEmpty || mentionedUserId.nonEmpty || phrase.nonEmpty ||
       hashtags.nonEmpty || url.nonEmpty || fromUser.nonEmpty || toUser.nonEmpty ||
-      retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty
+      retweetsOfUser.nonEmpty || context.nonEmpty || entity.nonEmpty || conversationId.nonEmpty || tag.nonEmpty
 }
 
 case object Rule {
