@@ -99,62 +99,62 @@ case class PayloadBuilder(rule: Rule) {
 
   private def applyIsRetweet(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isRetweet match {
-      case Some(isRetweet: Boolean) => payload.applyIsRetweet
+      case Some(isRetweet: Boolean) => payload.applyIsRetweet(isRetweet)
       case _ => payload
     }
   }
 
   private def applyIsVerified(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isVerified match {
-      case Some(isVerified: Boolean) => payload.applyIsVerified
+      case Some(isVerified: Boolean) => payload.applyIsVerified(isVerified)
       case _ => payload
     }
   }
 
   private def applyIsReply(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.isReply match {
-      case Some(isReply: Boolean) => payload.applyIsReply
+      case Some(isReply: Boolean) => payload.applyIsReply(isReply)
       case _ => payload
     }
   }
 
   private def applyHasHashtags(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasHashtags match {
-      case Some(hasHashtags: Boolean) => payload.applyHasHashtags
+      case Some(hasHashtags: Boolean) => payload.applyHasHashtags(hasHashtags)
       case _ => payload
     }
   }
 
   private def applyHasLinks(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasLinks match {
-      case Some(hasLinks: Boolean) => payload.applyHasLinks
+      case Some(hasLinks: Boolean) => payload.applyHasLinks(hasLinks)
       case _ => payload
     }
   }
 
   private def applyHasMedia(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasMedia match {
-      case Some(hasHasMedia: Boolean) => payload.applyHasMedia
+      case Some(hasHasMedia: Boolean) => payload.applyHasMedia(hasHasMedia)
       case _ => payload
     }
   }
 
   private def applyHasImages(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasImages match {
-      case Some(hasImage: Boolean) => payload.applyHasImages
+      case Some(hasImage: Boolean) => payload.applyHasImages(hasImage)
       case _ => payload
     }
   }
 
   private def applyHasVideos(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
     options.hasVideos match {
-      case Some(hasVideos: Boolean) => payload.applyHasVideos
+      case Some(hasVideos: Boolean) => payload.applyHasVideos(hasVideos)
       case _ => payload
     }
   }
 
   private def applyLanguage(payload: PayloadEntry, options: RuleOptions): PayloadEntry = {
-    options.lang match {
+    options.language match {
       case Some(lang: String) => payload.applyLanguage(lang)
       case _ => payload.applyLanguage("en")
     }

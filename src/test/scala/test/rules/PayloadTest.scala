@@ -27,42 +27,42 @@ class PayloadTest extends AnyFunSuite {
 
   test("test applying isRetweet") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyIsRetweet)
+    println(payloadEntry.applyIsRetweet(true))
   }
 
   test("test applying isVerified") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyIsVerified)
+    println(payloadEntry.applyIsVerified(false))
   }
 
   test("test applying isReply") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyIsReply)
+    println(payloadEntry.applyIsReply(true))
   }
 
   test("test applying hasHashtags") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyHasHashtags)
+    println(payloadEntry.applyHasHashtags(false))
   }
 
   test("test applying hasLinks") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyHasLinks)
+    println(payloadEntry.applyHasLinks(true))
   }
 
   test("test applying hasMedia") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyHasMedia)
+    println(payloadEntry.applyHasMedia(false))
   }
 
   test("test applying hasImages") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyHasImages)
+    println(payloadEntry.applyHasImages(true))
   }
 
   test("test applying hasVideos") {
     val payloadEntry = PayloadEntry(" ")
-    println(payloadEntry.applyHasVideos)
+    println(payloadEntry.applyHasVideos(false))
   }
 
   test("test applying language") {
